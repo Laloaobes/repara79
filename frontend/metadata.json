@@ -1,0 +1,6 @@
+{
+  "name": "Repara 79",
+  "description": "Sistema de gestión de tickets para el reporte, inspección y mantenimiento de desperfectos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
