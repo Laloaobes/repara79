@@ -1,0 +1,53 @@
+# Laravel / PHP backend ignores
+
+# System / editor files
+.DS_Store
+Thumbs.db
+*.log
+*.cache
+*.tmp
+*.swp
+
+# Environment files
+.env
+.env.*
+
+# Composer / Node dependencies
+/vendor/
+/node_modules/
+
+# Build and runtime generated files
+/public/build/
+/public/hot/
+/public/storage/
+/bootstrap/cache/
+/backend.phpunit.result.cache
+.phpunit.result.cache
+.phpunit.cache
+
+# Storage directories (keep .gitignore placeholders)
+/storage/
+!storage/.gitignore
+!storage/app/.gitignore
+!storage/framework/.gitignore
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/testing/.gitignore
+!storage/framework/views/.gitignore
+
+# Local SQLite database for development
+/database/database.sqlite
+
+# Source maps and generated assets
+*.map
+
+# Laravel Homestead
+Homestead.json
+Homestead.yaml
+
+# PHPUnit and PHPStorm artifacts
+/.phpstorm.meta.php
+/.phpunit.result.cache
+
+# Other unwanted files
+auth.json
