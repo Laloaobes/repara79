@@ -1,0 +1,33 @@
+name: Frontend CI (React)
+
+# Esto hace que el script corra cada vez que hagan un PR hacia develop o main
+on:
+  pull_request:
+    branches: [ "develop", "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Clona el repositorio en la máquina virtual de GitHub
+    - name: Checkout del código
+      uses: actions/checkout@v3
+
+    # 2. Instala Node.js
+    - name: Configurar Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20' # o la versión que estén usando
+
+    # 3. Instala las dependencias (entrando a la carpeta frontend)
+    - name: Instalar dependencias
+      working-directory: ./frontend
+      run: npm install
+
+    # 4. Intenta construir el proyecto para verificar que no haya errores
+    - name: Construir proyecto (Build)
+      working-directory: ./frontend
+      run: npm run build
+
+      
