@@ -12,10 +12,21 @@ import {
 } from 'lucide-react';
 import dashboardService from '../services/dashboardService';
 
+interface Ticket {
+  id: string;
+  titulo: string;
+  desc: string;
+  ubicacion: string;
+  fecha: string;
+  estado: 'Urgente' | 'En proceso' | 'Pendiente' | 'Resuelto';
+  tecnico: string;
+  bgImg: string | null;
+}
+
 const DashboardPage = () => {
   // Ahora los datos inician vacíos esperando a la Base de Datos
   const [stats, setStats] = useState({ total: 0, urgentes: 0, enProceso: 0, resueltos: 0, pendientes: 0 });
-  const [recientes, setRecientes] = useState([]);
+  const [recientes, setRecientes] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -220,7 +231,7 @@ const DashboardPage = () => {
 };
 
 // Componente Helper para las etiquetas de Estado
-const Badge = ({ estado }) => {
+const Badge = ({ estado }: { estado: 'Urgente' | 'En proceso' | 'Pendiente' | 'Resuelto' }) => {
   const styles = {
     'Urgente': 'bg-red-50 text-red-600 border-red-200',
     'En proceso': 'bg-blue-50 text-blue-600 border-blue-200',
