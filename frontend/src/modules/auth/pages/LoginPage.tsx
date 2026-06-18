@@ -20,11 +20,11 @@ const LoginPage = () => {
   const [selectedRole, setSelectedRole] = useState('Docente');
 
   // Función para manejar el envío del formulario (Preparado para producción)
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     // Aquí recolectamos los datos del formulario de manera segura
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
     
     if (activeTab === 'register') {

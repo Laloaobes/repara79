@@ -1,10 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from './modules/auth/pages/LoginPage.jsx';
-import MainLayout from './layouts/MainLayout.jsx';
-import DashboardPage from './modules/dashboard/pages/DashboardPage.jsx';
-import TicketsPage from './modules/tickets/pages/TicketsPage.jsx';
-import AjustesPage from './modules/settings/pages/AjustesPage.jsx';
+import LoginPage from './modules/auth/pages/LoginPage';
+import MainLayout from './layouts/MainLayout';
+import DashboardPage from './modules/dashboard/pages/DashboardPage';
+import TicketsPage from './modules/tickets/pages/TicketsPage';
+import AjustesPage from './modules/settings/pages/AjustesPage';
 
 function App() {
   return (
