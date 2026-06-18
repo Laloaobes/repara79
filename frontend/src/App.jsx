@@ -1,24 +1,26 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage from '../src/modules/tickets/auth/pages/LoginPage';
-
-const DashboardTemporal = () => (
-  <div className="flex items-center justify-center h-screen bg-slate-50 text-2xl font-bold text-slate-800">
-    Bienvenido al Dashboard
-  </div>
-);
+import LoginPage from './modules/auth/pages/LoginPage.jsx';
+import MainLayout from './layouts/MainLayout.jsx';
+import DashboardPage from './modules/dashboard/pages/DashboardPage.jsx';
+import TicketsPage from './modules/tickets/pages/TicketsPage.jsx';
+import AjustesPage from './modules/settings/pages/AjustesPage.jsx';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ruta pública: Nuestro nuevo Login/Registro */}
+        {/* Ruta pública */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Ruta privada (temporal): Aquí irá el Dashboard real más adelante */}
-        <Route path="/" element={<DashboardTemporal />} />
+        {/* Rutas protegidas con layout */}
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="tickets" element={<TicketsPage />} />
+          <Route path="ajustes" element={<AjustesPage />} />
+        </Route>
 
-        {/* Redirección de seguridad: Si alguien entra a una URL que no existe, lo manda al login */}
+        {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
