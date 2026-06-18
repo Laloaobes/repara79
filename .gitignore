@@ -38,3 +38,5 @@ backend/.phpunit.result.cache
 .env.*.local
 frontend/.env
 backend/.env
+
+.gitkeep
