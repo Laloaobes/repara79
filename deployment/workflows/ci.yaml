@@ -18,7 +18,7 @@ jobs:
     - name: Configurar Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x' # o la versión que estén usando
+        node-version: '20' # o la versión que estén usando
 
     # 3. Instala las dependencias (entrando a la carpeta frontend)
     - name: Instalar dependencias
@@ -29,3 +29,5 @@ jobs:
     - name: Construir proyecto (Build)
       working-directory: ./frontend
       run: npm run build
+
+      

@@ -1,0 +1,40 @@
+# =========================
+# 1. Archivos del Sistema / Editores
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# =========================
+# 2. Frontend (React / Node.js)
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# 3. Backend (Laravel / PHP) - Post MVP
+# =========================
+backend/vendor/
+backend/public/build
+backend/public/hot
+backend/public/storage
+backend/storage/*.key
+backend/Homestead.json
+backend/Homestead.yaml
+backend/.phpunit.result.cache
+
+# =========================
+# 4. Variables de Entorno (¡Súper importante!)
+# =========================
+.env
+.env.local
+.env.*.local
+frontend/.env
+backend/.env
