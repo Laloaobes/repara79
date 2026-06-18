@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Hammer, 
   Plus, 
@@ -11,6 +12,7 @@ import {
   UserCircle
 } from 'lucide-react';
 import dashboardService from '../services/dashboardService';
+import NewTicketModal from '../../tickets/components/NewTicketModal';
 
 interface Ticket {
   id: string;
@@ -24,10 +26,12 @@ interface Ticket {
 }
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   // Ahora los datos inician vacíos esperando a la Base de Datos
   const [stats, setStats] = useState({ total: 0, urgentes: 0, enProceso: 0, resueltos: 0, pendientes: 0 });
   const [recientes, setRecientes] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -92,7 +96,12 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 lg:p-10 max-w-6xl mx-auto flex flex-col gap-6 md:gap-8">
+    <>
+      <NewTicketModal
+        isOpen={isNewTicketModalOpen}
+        onClose={() => setIsNewTicketModalOpen(false)}
+      />
+      <div className="p-4 md:p-8 lg:p-10 max-w-6xl mx-auto flex flex-col gap-6 md:gap-8">
       
       {/* 1. BANNER DE BIENVENIDA */}
       <div className="bg-gradient-to-r from-[#163d2a] to-[#2d6a4f] rounded-[2rem] p-6 md:p-10 relative overflow-hidden shadow-xl shadow-[#2d6a4f]/20">
@@ -114,10 +123,16 @@ const DashboardPage = () => {
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <button className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#52b788] hover:bg-[#40916c] text-white rounded-xl font-bold shadow-lg shadow-[#52b788]/30 transition-all active:scale-95 text-sm">
+            <button
+              onClick={() => setIsNewTicketModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#52b788] hover:bg-[#40916c] text-white rounded-xl font-bold shadow-lg shadow-[#52b788]/30 transition-all active:scale-95 text-sm"
+            >
               <Plus size={18} strokeWidth={2.5} /> Nuevo Reporte
             </button>
-            <button className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-bold transition-all text-sm backdrop-blur-sm">
+            <button
+              onClick={() => navigate('/tickets')}
+              className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-bold transition-all text-sm backdrop-blur-sm"
+            >
               <ClipboardList size={18} /> Ver todos los tickets
             </button>
           </div>
@@ -226,7 +241,8 @@ const DashboardPage = () => {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
