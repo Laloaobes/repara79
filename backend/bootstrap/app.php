@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
     health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Enable CORS middleware for API routes (supports credentials for Sanctum)
+        $middleware->use([
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
