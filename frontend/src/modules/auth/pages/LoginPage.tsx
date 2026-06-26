@@ -10,6 +10,10 @@ import {
   GraduationCap,
   User
 } from 'lucide-react';
+import { login } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
+
+
 
 const LoginPage = () => {
   // Estados para controlar la UI
@@ -19,12 +23,14 @@ const LoginPage = () => {
   // Estado para el formulario de registro (Alumno eliminado, Docente por defecto)
   const [selectedRole, setSelectedRole] = useState('Docente');
 
+  const navigate = useNavigate();
+
   // Función para manejar el envío del formulario (Preparado para producción)
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     // Aquí recolectamos los datos del formulario de manera segura
-    const formData = new FormData(e.target);
+    const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
     
     if (activeTab === 'register') {
@@ -38,7 +44,22 @@ const LoginPage = () => {
       }
       console.log('Datos listos para enviar al servicio de Registro:', data);
     } else {
-      console.log('Datos listos para enviar al servicio de Login:', data);
+      try {
+        const response = await login(
+          data.email as string,
+          data.password as string,
+        );
+
+        localStorage.setItem("auth_token", response.token);
+
+        localStorage.setItem("user_data", JSON.stringify(response.user));
+
+        navigate("/");
+      } catch (error) {
+        console.error(error);
+
+        alert("Correo o contraseña incorrectos");
+      }
     }
     
     // TODO: Conectar con src/modules/auth/services/authService.ts
