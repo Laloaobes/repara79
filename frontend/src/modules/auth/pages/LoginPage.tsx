@@ -1,62 +1,65 @@
 import React, { useState } from 'react';
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Wrench, 
-  ShieldCheck, 
-  FileText, 
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Wrench,
+  ShieldCheck,
+  FileText,
   GraduationCap,
   User
 } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import apiClient from '../../../api/axios';
 
 const LoginPage = () => {
-  // Estados para controlar la UI
-  const [activeTab, setActiveTab] = useState('register'); 
+  const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
-  
-  // Estado para el formulario de registro (Alumno eliminado, Docente por defecto)
-  const [selectedRole, setSelectedRole] = useState('Docente');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Función para manejar el envío del formulario (Preparado para producción)
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Aquí recolectamos los datos del formulario de manera segura
+    setError('');
+
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
-    
-    if (activeTab === 'register') {
-      data.role = selectedRole; // Añadimos el rol seleccionado manualmente
-      
-      // Validación básica de contraseñas
-      if (data.password !== data.confirmPassword) {
-        // En producción aquí usarías una librería de notificaciones (toast)
-        console.error("Las contraseñas no coinciden");
-        return;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    setIsSubmitting(true);
+    try {
+      if (activeTab === 'register') {
+        const name = formData.get('fullName') as string;
+        const password_confirmation = formData.get('confirmPassword') as string;
+        await apiClient.post('/register', { name, email, password, password_confirmation });
+        await login(email, password);
+      } else {
+        await login(email, password);
       }
-      console.log('Datos listos para enviar al servicio de Registro:', data);
-    } else {
-      console.log('Datos listos para enviar al servicio de Login:', data);
+      navigate('/');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
+      const msgs = axiosErr?.response?.data?.errors;
+      setError(msgs ? Object.values(msgs).flat().join(' ') : (axiosErr?.response?.data?.message || 'Ocurrió un error. Intenta de nuevo.'));
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // TODO: Conectar con src/modules/auth/services/authService.ts
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f0fdf4] p-4 font-sans">
       
-      {/* Contenedor Principal (Tarjeta) */}
       <div className="flex flex-col md:flex-row w-full max-w-[1000px] bg-white rounded-[2rem] shadow-2xl overflow-hidden">
         
-        {/* === PANEL IZQUIERDO (Verde Oscuro) === */}
         <div className="w-full md:w-[45%] bg-[#1a4731] text-white p-10 md:p-12 flex flex-col justify-between relative overflow-hidden hidden md:flex">
           
-          {/* Decoración de fondo suave */}
           <div className="absolute -top-24 -left-24 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl pointer-events-none"></div>
           
-          {/* Logo y Marca */}
           <div className="flex items-center gap-3 mb-10 z-10">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20">
               <GraduationCap size={20} className="text-green-300" />
@@ -132,6 +135,12 @@ const LoginPage = () => {
           </div>
 
        
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium">
+              {error}
+            </div>
+          )}
+
           <div key={activeTab} className="flex-1 flex flex-col animate-fade-in-up">
             
             {/* Header dinámico */}
@@ -187,28 +196,7 @@ const LoginPage = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5 ml-1">
-                        Rol
-                      </label>
-                      <div className="flex bg-slate-50 border border-slate-200 p-1 rounded-xl gap-1">
-                        {['Docente', 'Administrativo'].map((role) => (
-                          <button
-                            key={role}
-                            type="button"
-                            onClick={() => setSelectedRole(role)}
-                            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-                              selectedRole === role 
-                                ? 'bg-[#2d6a4f] text-white shadow-md' 
-                                : 'text-slate-500 hover:bg-slate-200/50'
-                            }`}
-                          >
-                            {role}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
+</>
                 )}
 
                 {/* === CAMPOS EXCLUSIVOS DE LOGIN === */}
@@ -285,11 +273,12 @@ const LoginPage = () => {
 
               {/* Botón de Acción Principal */}
               <div className={`mt-auto ${activeTab === 'register' ? 'pt-8' : 'pt-6'}`}>
-                <button 
-                  type="submit" 
-                  className="w-full bg-[#2d6a4f] hover:bg-[#1a4731] text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-green-900/20"
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#2d6a4f] hover:bg-[#1a4731] disabled:opacity-60 text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-green-900/20"
                 >
-                  {activeTab === 'login' ? 'Ingresar al sistema' : 'Solicitar acceso'}
+                  {isSubmitting ? 'Cargando...' : (activeTab === 'login' ? 'Ingresar al sistema' : 'Crear cuenta')}
                 </button>
               </div>
             </form>
