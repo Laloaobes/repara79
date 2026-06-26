@@ -10,37 +10,39 @@ import {
   Search,
   Menu,
   X,
-  GraduationCap
+  GraduationCap,
+  FileText,
+  Users,
+  MapPin,
 } from 'lucide-react';
-import NewTicketModal from '../modules/tickets/components/NewTicketModal';
+import { useAuth } from '../context/AuthContext';
 
 const MainLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
-  
-  // Asumiendo que usas react-router-dom, en un entorno de prueba a veces useNavigate falla
-  // Si da error en la vista previa, reemplázalo con una redirección manual, pero en VS Code funcionará.
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    navigate('/login'); 
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const initials = user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() ?? '?';
+  const rol = user?.rol ?? '';
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
-    { id: 'tickets', label: 'Tickets', icon: <ClipboardList size={20} />, path: '/tickets' },
-    { id: 'ajustes', label: 'Ajustes', icon: <Settings size={20} />, path: '/ajustes' },
-  ];
+    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/', roles: [] as string[] },
+    { id: 'tickets', label: 'Tickets', icon: <ClipboardList size={20} />, path: '/tickets', roles: [] as string[] },
+    { id: 'historial', label: 'Historial', icon: <FileText size={20} />, path: '/historial', roles: ['Administrador', 'Subdirector Administrativo'] },
+    { id: 'usuarios', label: 'Usuarios', icon: <Users size={20} />, path: '/usuarios', roles: ['Administrador'] },
+    { id: 'zonas', label: 'Zonas', icon: <MapPin size={20} />, path: '/zonas', roles: ['Administrador'] },
+    { id: 'ajustes', label: 'Ajustes', icon: <Settings size={20} />, path: '/ajustes', roles: ['Administrador'] },
+  ].filter((item) => item.roles.length === 0 || item.roles.includes(rol));
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 font-sans">
-      
-      {/* Modal global desencadenado por el Sidebar/BottomNav */}
-      <NewTicketModal 
-        isOpen={isNewTicketModalOpen} 
-        onClose={() => setIsNewTicketModalOpen(false)} 
-      />
 
       {/* =========================================
           SIDEBAR (Solo Desktop)
@@ -65,10 +67,11 @@ const MainLayout = () => {
             <NavLink
               key={item.id}
               to={item.path}
+              end={item.path === '/'}
               className={({ isActive }) => `
                 flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-                ${isActive 
-                  ? 'bg-[#52b788]/20 text-[#52b788] font-bold border border-[#52b788]/30' 
+                ${isActive
+                  ? 'bg-[#52b788]/20 text-[#52b788] font-bold border border-[#52b788]/30'
                   : 'text-[#e8f5ee]/70 hover:bg-white/5 hover:text-white font-medium border border-transparent'}
               `}
             >
@@ -78,8 +81,8 @@ const MainLayout = () => {
           ))}
 
           <div className="mt-4 pt-4 border-t border-white/10 px-2">
-            <button 
-              onClick={() => setIsNewTicketModalOpen(true)}
+            <button
+              onClick={() => navigate('/tickets')}
               className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-[#52b788] to-[#2d9e6b] text-white rounded-xl font-bold text-[0.9rem] shadow-lg shadow-[#52b788]/30 hover:opacity-90 transition-opacity active:scale-95"
             >
               <Plus size={18} strokeWidth={2.5} />
@@ -91,14 +94,14 @@ const MainLayout = () => {
         <div className="p-4 border-t border-white/10 mt-auto">
           <div className="flex items-center gap-3 px-2 mb-4">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] flex items-center justify-center font-bold text-sm border-2 border-white/10">
-              ÁG
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[0.85rem] font-bold text-white truncate">Ángel García</p>
-              <p className="text-[0.7rem] text-[#e8f5ee]/50">Administrador</p>
+              <p className="text-[0.85rem] font-bold text-white truncate">{user?.name}</p>
+              <p className="text-[0.7rem] text-[#e8f5ee]/50">{user?.rol}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="flex items-center justify-center gap-2 w-full py-3 bg-[#c0392b]/10 text-[#e07b72] border border-[#c0392b]/20 rounded-xl font-bold text-[0.85rem] hover:bg-[#c0392b]/20 transition-colors"
           >
@@ -132,9 +135,9 @@ const MainLayout = () => {
             <button className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl">
               <Search size={20} />
             </button>
-            
+
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
                 className={`p-2 rounded-xl transition-colors relative ${notificationsOpen ? 'bg-green-50 text-[#2d6a4f]' : 'text-slate-500 hover:bg-slate-100'}`}
               >
@@ -144,7 +147,7 @@ const MainLayout = () => {
             </div>
 
             <div className="hidden md:flex w-9 h-9 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] items-center justify-center font-bold text-white text-sm shadow-sm cursor-pointer border-2 border-green-100">
-              ÁG
+              {initials}
             </div>
           </div>
         </header>
@@ -160,7 +163,7 @@ const MainLayout = () => {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)} />
-          
+
           <div className="w-[280px] h-full bg-[#163d2a] text-white flex flex-col relative shadow-2xl z-10 animate-in slide-in-from-left-4 duration-200">
             <div className="p-5 flex items-center justify-between border-b border-white/10">
               <div className="flex items-center gap-3">
@@ -170,14 +173,14 @@ const MainLayout = () => {
                   <p className="text-[0.55rem] text-white/50 uppercase">CBTa Zinacantepec</p>
                 </div>
               </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-white/50 hover:text-white"><X size={20}/></button>
+              <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-white/50 hover:text-white"><X size={20} /></button>
             </div>
-            
+
             <div className="p-5 border-b border-white/10 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#52b788] flex items-center justify-center font-bold">ÁG</div>
+              <div className="w-10 h-10 rounded-full bg-[#52b788] flex items-center justify-center font-bold">{initials}</div>
               <div>
-                <p className="text-[0.85rem] font-bold">Ángel García</p>
-                <p className="text-[0.7rem] text-white/50">Administrador</p>
+                <p className="text-[0.85rem] font-bold">{user?.name}</p>
+                <p className="text-[0.7rem] text-white/50">{user?.rol}</p>
               </div>
             </div>
 
@@ -186,6 +189,7 @@ const MainLayout = () => {
                 <NavLink
                   key={item.id}
                   to={item.path}
+                  end={item.path === '/'}
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) => `
                     flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium text-[0.9rem]
@@ -195,10 +199,10 @@ const MainLayout = () => {
                   {item.icon} {item.label}
                 </NavLink>
               ))}
-              <button 
+              <button
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  setIsNewTicketModalOpen(true);
+                  navigate('/tickets');
                 }}
                 className="mt-4 flex items-center gap-2 w-full py-3.5 bg-[#52b788] hover:bg-[#40916c] text-white rounded-xl font-bold justify-center transition-colors"
               >
@@ -219,10 +223,11 @@ const MainLayout = () => {
           BOTTOM NAV MÓVIL
       ========================================= */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-between px-2 pb-safe pt-1 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        {navItems.map((item) => (
+        {navItems.slice(0, 3).map((item) => (
           <NavLink
             key={item.id}
             to={item.path}
+            end={item.path === '/'}
             className={({ isActive }) => `
               flex flex-col items-center justify-center w-1/4 py-2 gap-1 transition-colors
               ${isActive ? 'text-[#2d6a4f]' : 'text-slate-400 hover:text-slate-600'}
@@ -232,8 +237,8 @@ const MainLayout = () => {
             <span className="text-[0.6rem] font-bold">{item.label}</span>
           </NavLink>
         ))}
-        <button 
-          onClick={() => setIsNewTicketModalOpen(true)}
+        <button
+          onClick={() => navigate('/tickets')}
           className="w-1/4 flex flex-col items-center justify-center py-2 gap-1 outline-none group"
         >
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] text-white flex items-center justify-center shadow-lg shadow-[#52b788]/40 -mt-4 border-4 border-white group-active:scale-95 transition-transform">
