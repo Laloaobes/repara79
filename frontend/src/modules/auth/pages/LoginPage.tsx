@@ -10,45 +10,58 @@ import {
   GraduationCap,
   User
 } from 'lucide-react';
-import { useAuth } from '../../../context/AuthContext';
+import { login } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../../../api/axios';
+
+
 
 const LoginPage = () => {
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Estado para el formulario de registro (Alumno eliminado, Docente por defecto)
+  const [selectedRole, setSelectedRole] = useState('Docente');
 
-  const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Función para manejar el envío del formulario (Preparado para producción)
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    setIsSubmitting(true);
-    try {
-      if (activeTab === 'register') {
-        const name = formData.get('fullName') as string;
-        const password_confirmation = formData.get('confirmPassword') as string;
-        await apiClient.post('/register', { name, email, password, password_confirmation });
-        await login(email, password);
-      } else {
-        await login(email, password);
+    const data = Object.fromEntries(formData.entries());
+    
+    if (activeTab === 'register') {
+      data.role = selectedRole; // Añadimos el rol seleccionado manualmente
+      
+      // Validación básica de contraseñas
+      if (data.password !== data.confirmPassword) {
+        // En producción aquí usarías una librería de notificaciones (toast)
+        console.error("Las contraseñas no coinciden");
+        return;
       }
-      navigate('/');
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
-      const msgs = axiosErr?.response?.data?.errors;
-      setError(msgs ? Object.values(msgs).flat().join(' ') : (axiosErr?.response?.data?.message || 'Ocurrió un error. Intenta de nuevo.'));
-    } finally {
-      setIsSubmitting(false);
+      console.log('Datos listos para enviar al servicio de Registro:', data);
+    } else {
+      try {
+        const response = await login(
+          data.email as string,
+          data.password as string,
+        );
+
+        localStorage.setItem("auth_token", response.token);
+
+        localStorage.setItem("user_data", JSON.stringify(response.user));
+
+        navigate("/");
+      } catch (error) {
+        console.error(error);
+
+        alert("Correo o contraseña incorrectos");
+      }
     }
+    
+    // TODO: Conectar con src/modules/auth/services/authService.ts
   };
 
   return (
