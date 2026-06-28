@@ -1,178 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import { X, Upload, AlertTriangle } from 'lucide-react';
-import apiClient from '../../../api/axios';
-import ticketService from '../services/ticketService';
-
-interface Zona { id: number; nombre: string; }
+import React, { useState } from 'react';
+import { X, Upload } from 'lucide-react';
 
 interface NewTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const CATEGORIAS = [
-  'Plomería', 'Electricidad', 'Carpintería', 'Pintura', 'Limpieza',
-  'Equipo de cómputo', 'Mobiliario', 'Infraestructura', 'Seguridad', 'Otro',
-];
-
-const PRIORIDADES: { value: string; label: string }[] = [
-  { value: 'baja', label: 'Baja' },
-  { value: 'media', label: 'Media' },
-  { value: 'alta', label: 'Alta' },
-  { value: 'critica', label: 'Crítica' },
-];
-
 const NewTicketModal = ({ isOpen, onClose }: NewTicketModalProps) => {
-  const [zonas, setZonas] = useState<Zona[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [fileNames, setFileNames] = useState<string[]>([]);
+  const [priority, setPriority] = useState('Media');
 
-  useEffect(() => {
-    if (!isOpen) return;
-    apiClient.get('/zonas').then(r => setZonas(r.data)).catch(() => {});
-  }, [isOpen]);
-
+  // Prevenir renderizado si no está abierto
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Se añade <HTMLFormElement> para un correcto tipado en TypeScript
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
 
-    const form = e.currentTarget;
-    const formData = new FormData(form);
+    // Inyectamos el estado de la prioridad seleccionada
+    data.priority = priority;
 
-    // Añadir archivos de evidencia
-    const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
-    if (fileInput?.files) {
-      Array.from(fileInput.files).forEach(file => {
-        formData.append('evidencias[]', file);
-      });
-    }
-
-    try {
-      await ticketService.create(formData);
-      onClose();
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string; errors?: Record<string,string[]> } } };
-      const msgs = e?.response?.data?.errors;
-      if (msgs) {
-        setError(Object.values(msgs).flat().join(' '));
-      } else {
-        setError(e?.response?.data?.message || 'Error al crear el ticket. Intenta de nuevo.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    console.log("Datos listos para enviar al backend:", data);
+    // TODO: Enviar al servicio HTTP
+    onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-
-        {/* Header */}
+    /* Backdrop con Blur (Cierra el modal al hacer clic afuera) */
+    <div 
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" 
+      onClick={onClose}
+    >
+      
+      {/* Modal Content (Detiene la propagación del clic para que no se cierre al hacer clic adentro) */}
+      <div 
+        className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200" 
+        onClick={e => e.stopPropagation()}
+      >
+        
+        {/* Header Fijo */}
         <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 shrink-0">
           <div>
             <h2 className="text-xl font-bold text-slate-800 tracking-tight">Nuevo Reporte</h2>
             <p className="text-xs text-slate-500 mt-1 font-medium">Registrar incidencia de mantenimiento</p>
           </div>
-          <button type="button" onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+          <button 
+            type="button"
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+          >
             <X size={20} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-6 md:p-8 overflow-y-auto flex-1">
-          {error && (
-            <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
+        {/* Body con Scroll */}
+        <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1">
           <form id="new-ticket-form" onSubmit={handleSubmit} className="flex flex-col gap-5">
-
-            {/* Zona */}
+            
+            {/* Título */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-2 ml-1 block">Zona / Área *</label>
-              <select name="zona_id" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none text-sm font-medium text-slate-700">
-                <option value="">Selecciona una zona...</option>
-                {zonas.map(z => <option key={z.id} value={z.id}>{z.nombre}</option>)}
-              </select>
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2 ml-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#52b788]"></span> Título del problema
+              </label>
+              <input 
+                type="text" 
+                name="title"
+                placeholder="Ej. Fuga de agua en baño" 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
+                required
+              />
             </div>
 
-            {/* Categoría */}
+            {/* Ubicación */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-2 ml-1 block">Categoría *</label>
-              <select name="categoria" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none text-sm font-medium text-slate-700">
-                <option value="">Selecciona una categoría...</option>
-                {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            {/* Ubicación exacta */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 mb-2 ml-1 block">Ubicación exacta *</label>
-              <input
-                type="text" name="ubicacion_exacta" required
-                placeholder="Ej. Aula 7, primer piso, lado norte"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none text-sm font-medium text-slate-700 placeholder:text-slate-400"
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2 ml-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Ubicación
+              </label>
+              <input 
+                type="text" 
+                name="location"
+                placeholder="Ej. Aula 7, Edificio B" 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
+                required
               />
             </div>
 
             {/* Descripción */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-2 ml-1 block">Descripción *</label>
-              <textarea
-                name="descripcion" rows={4} required
-                placeholder="Describe el problema con detalle..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none text-sm font-medium text-slate-700 placeholder:text-slate-400 resize-none"
-              />
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2 ml-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Descripción
+              </label>
+              <textarea 
+                name="description"
+                rows={4}
+                placeholder="Describe el problema con detalle..." 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400 resize-none"
+                required
+              ></textarea>
             </div>
 
-            {/* Prioridad */}
+            {/* Subir Evidencia */}
+            <div className="relative border-2 border-dashed border-[#52b788]/30 bg-[#f0fdf4]/50 rounded-2xl p-6 text-center hover:bg-[#f0fdf4] transition-colors group cursor-pointer">
+              <input 
+                type="file" 
+                name="evidence"
+                accept="image/png, image/jpeg"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+              />
+              <div className="w-10 h-10 mx-auto bg-white rounded-full flex items-center justify-center shadow-sm text-[#52b788] mb-3 group-hover:-translate-y-1 transition-transform">
+                <Upload size={18} strokeWidth={2.5} />
+              </div>
+              <p className="text-sm font-bold text-[#163d2a] mb-1">Subir evidencia fotográfica</p>
+              <p className="text-[0.65rem] font-medium text-[#163d2a]/60 uppercase tracking-widest">PNG, JPG — máx. 5 MB</p>
+            </div>
+
+            {/* Selector de Prioridad */}
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-2 ml-1 block">Prioridad *</label>
-              <select name="prioridad" required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none text-sm font-medium text-slate-700">
-                {PRIORIDADES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2 ml-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Prioridad
+              </label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700"
+              >
+                <option value="Baja">Baja</option>
+                <option value="Media">Media</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
               </select>
             </div>
 
-            {/* Evidencias */}
-            <div>
-              <label className="text-xs font-bold text-slate-700 mb-2 ml-1 block">Evidencia fotográfica (opcional)</label>
-              <div className="relative border-2 border-dashed border-[#52b788]/30 bg-[#f0fdf4]/50 rounded-2xl p-6 text-center hover:bg-[#f0fdf4] transition-colors cursor-pointer">
-                <input
-                  type="file" accept="image/png,image/jpeg" multiple
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  onChange={e => {
-                    const files = Array.from(e.target.files ?? []);
-                    setFileNames(files.map(f => f.name));
-                  }}
-                />
-                <Upload size={20} className="mx-auto text-[#52b788] mb-2" />
-                <p className="text-sm font-bold text-[#163d2a] mb-1">
-                  {fileNames.length > 0 ? fileNames.join(', ') : 'Subir evidencia fotográfica'}
-                </p>
-                <p className="text-[0.65rem] font-medium text-[#163d2a]/60 uppercase tracking-widest">PNG, JPG — máx. 5 MB c/u</p>
-              </div>
-            </div>
           </form>
         </div>
 
-        {/* Footer */}
+        {/* Footer Fijo */}
         <div className="p-4 md:p-6 border-t border-slate-100 flex gap-3 shrink-0 bg-slate-50/50 rounded-b-[2rem]">
-          <button type="button" onClick={onClose} className="flex-1 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 text-sm">
+          <button 
+            type="button" 
+            onClick={onClose}
+            className="flex-1 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors text-sm"
+          >
             Cancelar
           </button>
-          <button
-            type="submit" form="new-ticket-form" disabled={isSubmitting}
-            className="flex-1 py-3.5 bg-[#163d2a] hover:bg-[#1e4535] disabled:opacity-60 text-white rounded-xl font-bold transition-all active:scale-[0.98] shadow-lg text-sm"
+          <button 
+            type="submit" 
+            form="new-ticket-form"
+            className="flex-1 py-3.5 bg-[#163d2a] hover:bg-[#1e4535] text-white rounded-xl font-bold transition-all active:scale-[0.98] shadow-lg shadow-[#163d2a]/20 text-sm"
           >
-            {isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
+            Enviar Reporte
           </button>
         </div>
+
       </div>
     </div>
   );
