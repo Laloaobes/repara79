@@ -10,6 +10,18 @@ return response.data;
 
 }
 
+export async function register(name: string, email: string, password: string, passwordConfirmation: string) {
+const response = await apiClient.post('/register', {
+name,
+email,
+password,
+password_confirmation: passwordConfirmation
+});
+
+return response.data;
+
+}
+
 export async function logout() {
 const response = await apiClient.post('/logout');
 

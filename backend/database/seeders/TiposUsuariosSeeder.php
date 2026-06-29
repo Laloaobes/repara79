@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class TiposUsuariosSeeder extends Seeder
@@ -11,29 +10,22 @@ class TiposUsuariosSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-public function run(): void
-{
-    DB::table('tipos_usuarios')->insert([
-        [
-            'nombre' => 'Administrador',
-            'created_at' => now(),
-            'updated_at' => now()
-        ],
-        [
-            'nombre' => 'Subdirector Administrativo',
-            'created_at' => now(),
-            'updated_at' => now()
-        ],
-        [
-            'nombre' => 'Personal de Mantenimiento',
-            'created_at' => now(),
-            'updated_at' => now()
-        ],
-        [
-            'nombre' => 'Responsable del Lugar',
-            'created_at' => now(),
-            'updated_at' => now()
-        ]
-    ]);
-}
+    public function run(): void
+    {
+        foreach ([
+            'Administrador',
+            'Subdirector Administrativo',
+            'Personal de Mantenimiento',
+            'Responsable del Lugar',
+            'Usuario Registrado',
+        ] as $nombre) {
+            DB::table('tipos_usuarios')->updateOrInsert(
+                ['nombre' => $nombre],
+                [
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
+    }
 }

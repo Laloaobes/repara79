@@ -5,12 +5,11 @@ import {
   Eye, 
   EyeOff, 
   Wrench, 
-  ShieldCheck, 
   FileText, 
   GraduationCap,
   User
 } from 'lucide-react';
-import { login } from '../services/authService';
+import { login, register } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -20,9 +19,6 @@ const LoginPage = () => {
   const [activeTab, setActiveTab] = useState('register'); 
   const [showPassword, setShowPassword] = useState(false);
   
-  // Estado para el formulario de registro (Alumno eliminado, Docente por defecto)
-  const [selectedRole, setSelectedRole] = useState('Docente');
-
   const navigate = useNavigate();
 
   // Función para manejar el envío del formulario (Preparado para producción)
@@ -34,15 +30,27 @@ const LoginPage = () => {
     const data = Object.fromEntries(formData.entries());
     
     if (activeTab === 'register') {
-      data.role = selectedRole; // Añadimos el rol seleccionado manualmente
-      
-      // Validación básica de contraseñas
       if (data.password !== data.confirmPassword) {
-        // En producción aquí usarías una librería de notificaciones (toast)
-        console.error("Las contraseñas no coinciden");
+        alert("Las contraseñas no coinciden");
         return;
       }
-      console.log('Datos listos para enviar al servicio de Registro:', data);
+
+      try {
+        const response = await register(
+          data.fullName as string,
+          data.email as string,
+          data.password as string,
+          data.confirmPassword as string,
+        );
+
+        localStorage.setItem("auth_token", response.token);
+        localStorage.setItem("user_data", JSON.stringify(response.user));
+
+        navigate("/");
+      } catch (error) {
+        console.error(error);
+        alert("No fue posible crear la cuenta. Revisa los datos e intenta nuevamente.");
+      }
     } else {
       try {
         const response = await login(
@@ -61,8 +69,6 @@ const LoginPage = () => {
         alert("Correo o contraseña incorrectos");
       }
     }
-    
-    // TODO: Conectar con src/modules/auth/services/authService.ts
   };
 
   return (
@@ -104,7 +110,7 @@ const LoginPage = () => {
                 Gestión centralizada de tickets
               </li>
               <li className="flex items-center gap-3 text-sm text-green-50">
-                <div className="p-1.5 bg-white/10 rounded-lg"><ShieldCheck size={16} className="text-green-300" /></div>
+                <div className="p-1.5 bg-white/10 rounded-lg"><User size={16} className="text-green-300" /></div>
                 Acceso por roles y permisos
               </li>
               <li className="flex items-center gap-3 text-sm text-green-50">
@@ -208,27 +214,6 @@ const LoginPage = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5 ml-1">
-                        Rol
-                      </label>
-                      <div className="flex bg-slate-50 border border-slate-200 p-1 rounded-xl gap-1">
-                        {['Docente', 'Administrativo'].map((role) => (
-                          <button
-                            key={role}
-                            type="button"
-                            onClick={() => setSelectedRole(role)}
-                            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-                              selectedRole === role 
-                                ? 'bg-[#2d6a4f] text-white shadow-md' 
-                                : 'text-slate-500 hover:bg-slate-200/50'
-                            }`}
-                          >
-                            {role}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </>
                 )}
 

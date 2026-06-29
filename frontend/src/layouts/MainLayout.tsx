@@ -40,6 +40,7 @@ const MainLayout = () => {
       <NewTicketModal 
         isOpen={isNewTicketModalOpen} 
         onClose={() => setIsNewTicketModalOpen(false)} 
+        onCreated={() => window.dispatchEvent(new Event('tickets:created'))}
       />
 
       {/* =========================================
