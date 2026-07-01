@@ -11,8 +11,8 @@ import {
   Calendar,
   UserCircle
 } from 'lucide-react';
-import dashboardService from '../services/dashboardService';
 import NewTicketModal from '../../tickets/components/NewTicketModal';
+import ticketsService, { Ticket as ApiTicket } from '../../tickets/services/ticketsService';
 
 interface Ticket {
   id: string;
@@ -20,7 +20,9 @@ interface Ticket {
   desc: string;
   ubicacion: string;
   fecha: string;
-  estado: 'Urgente' | 'En proceso' | 'Pendiente' | 'Resuelto';
+  estado: string;
+  prioridad: string;
+  area: string;
   tecnico: string;
   bgImg: string | null;
 }
@@ -33,57 +35,53 @@ const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        // Intentamos pedir los datos reales al Backend Laravel
-        const data = await dashboardService.getDashboardOverview();
-        setStats(data.stats);
-        setRecientes(data.recientes);
-      } catch (error) {
-        // FALLBACK DE SEGURIDAD VISUAL:
-        // Si el backend marca error 404/500 o aún no está programado,
-        // inyectamos los datos de prueba para no dejar la pantalla en blanco frente al cliente.
-        console.warn("Mostrando datos de prueba visual (Backend en Laravel no conectado o sin respuesta)");
-        setStats({ total: 7, urgentes: 1, enProceso: 2, resueltos: 2, pendientes: 2 });
-        setRecientes([
-          {
-            id: 'TK-001',
-            titulo: 'Fuga de agua en baño principal',
-            desc: 'Tubería rota bajo el lavabo, agua acumulada en el piso. Requiere atención inmediata antes de que dañe las instalaciones eléctricas.',
-            ubicacion: 'Edificio A — Baño 1er piso',
-            fecha: '12 Jun 2026',
-            estado: 'Urgente',
-            tecnico: 'Ing. Ramírez',
-            bgImg: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=200&h=200&fit=crop',
-          },
-          {
-            id: 'TK-002',
-            titulo: 'Silla rota en laboratorio de cómputo',
-            desc: 'Una de las sillas del laboratorio tiene la base fracturada. Riesgo de accidente para los alumnos.',
-            ubicacion: 'Laboratorio de Cómputo — Aula 12',
-            fecha: '10 Jun 2026',
-            estado: 'En proceso',
-            tecnico: 'Mtro. López',
-            bgImg: null,
-          },
-          {
-            id: 'TK-003',
-            titulo: 'Luminaria fundida en pasillo',
-            desc: 'El foco del extremo norte del pasillo dejó de funcionar, generando zona oscura que puede ser peligrosa.',
-            ubicacion: 'Edificio B — Pasillo 2do piso',
-            fecha: '08 Jun 2026',
-            estado: 'Pendiente',
-            tecnico: 'Sin asignar',
-            bgImg: null,
-          }
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const formatTicket = (ticket: ApiTicket): Ticket => ({
+    id: `TK-${String(ticket.id).padStart(3, '0')}`,
+    titulo: ticket.titulo,
+    desc: ticket.descripcion_desperfecto,
+    ubicacion: ticket.ubicacion,
+    fecha: new Date(ticket.created_at).toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }),
+    estado: ticket.estado?.nombre || 'Pendiente',
+    prioridad: ticket.prioridad?.nombre || 'Sin prioridad',
+    area: ticket.area?.nombre || 'Sin area',
+    tecnico: 'Sin asignar',
+    bgImg: null,
+  });
 
-    loadDashboardData();
+  const loadTickets = async () => {
+    try {
+      const tickets = await ticketsService.getMyTickets();
+      const formattedTickets = tickets.map(formatTicket);
+
+      setRecientes(formattedTickets);
+      setStats({
+        total: formattedTickets.length,
+        urgentes: formattedTickets.filter((ticket) => ['Alta', 'Critica', 'Crítica'].includes(ticket.prioridad)).length,
+        enProceso: formattedTickets.filter((ticket) => ticket.estado === 'En reparacion' || ticket.estado === 'En reparación').length,
+        resueltos: formattedTickets.filter((ticket) => ticket.estado === 'Reparado').length,
+        pendientes: formattedTickets.filter((ticket) => ticket.estado === 'Pendiente').length,
+      });
+    } catch (error) {
+      console.error("No fue posible cargar los tickets del usuario", error);
+      setStats({ total: 0, urgentes: 0, enProceso: 0, resueltos: 0, pendientes: 0 });
+      setRecientes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTickets();
+
+    window.addEventListener('tickets:created', loadTickets);
+
+    return () => {
+      window.removeEventListener('tickets:created', loadTickets);
+    };
   }, []);
 
   if (isLoading) {
@@ -100,6 +98,7 @@ const DashboardPage = () => {
       <NewTicketModal
         isOpen={isNewTicketModalOpen}
         onClose={() => setIsNewTicketModalOpen(false)}
+        onCreated={loadTickets}
       />
       <div className="p-4 md:p-8 lg:p-10 max-w-6xl mx-auto flex flex-col gap-6 md:gap-8">
       
@@ -119,7 +118,7 @@ const DashboardPage = () => {
             Bienvenido, Ángel 👋
           </h1>
           <p className="text-white/80 text-[0.95rem] md:text-base font-medium max-w-md leading-relaxed">
-            Tienes <strong className="text-[#fca5a5]">1 reporte urgente</strong> y <strong className="text-[#fde68a]">2 pendientes</strong> por atender.
+            Tienes <strong className="text-[#fca5a5]">{stats.urgentes} reportes prioritarios</strong> y <strong className="text-[#fde68a]">{stats.pendientes} pendientes</strong> registrados.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -201,10 +200,17 @@ const DashboardPage = () => {
       <div>
         <div className="flex justify-between items-end mb-4 px-1">
           <h2 className="text-lg font-extrabold text-slate-800 tracking-tight">Reportes recientes</h2>
-          <button className="text-xs font-bold text-[#2d6a4f] hover:underline">Ver todos &rarr;</button>
+          <button onClick={() => navigate('/tickets')} className="text-xs font-bold text-[#2d6a4f] hover:underline">Ver todos &rarr;</button>
         </div>
         
         <div className="flex flex-col gap-3">
+          {recientes.length === 0 && (
+            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm text-center">
+              <h3 className="text-slate-800 font-bold mb-1">Aun no tienes reportes</h3>
+              <p className="text-slate-500 text-sm">Crea tu primer ticket de mantenimiento para verlo aqui.</p>
+            </div>
+          )}
+
           {recientes.map((ticket) => (
             <div key={ticket.id} className="bg-white rounded-3xl p-2 pr-4 md:pr-6 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow cursor-pointer">
               
@@ -247,15 +253,21 @@ const DashboardPage = () => {
 };
 
 // Componente Helper para las etiquetas de Estado
-const Badge = ({ estado }: { estado: 'Urgente' | 'En proceso' | 'Pendiente' | 'Resuelto' }) => {
+const Badge = ({ estado }: { estado: string }) => {
   const styles = {
-    'Urgente': 'bg-red-50 text-red-600 border-red-200',
-    'En proceso': 'bg-blue-50 text-blue-600 border-blue-200',
     'Pendiente': 'bg-amber-50 text-amber-600 border-amber-200',
-    'Resuelto': 'bg-green-50 text-green-600 border-green-200',
+    'Valorado': 'bg-blue-50 text-blue-600 border-blue-200',
+    'Autorizado': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    'En reparacion': 'bg-blue-50 text-blue-600 border-blue-200',
+    'En reparación': 'bg-blue-50 text-blue-600 border-blue-200',
+    'Rechazado': 'bg-red-50 text-red-600 border-red-200',
+    'Reparado': 'bg-green-50 text-green-600 border-green-200',
   };
+
+  const className = styles[estado as keyof typeof styles] || 'bg-slate-50 text-slate-600 border-slate-200';
+
   return (
-    <span className={`px-2.5 py-1 rounded-lg text-[0.65rem] font-black tracking-wider uppercase border ${styles[estado]}`}>
+    <span className={`px-2.5 py-1 rounded-lg text-[0.65rem] font-black tracking-wider uppercase border ${className}`}>
       {estado}
     </span>
   );
