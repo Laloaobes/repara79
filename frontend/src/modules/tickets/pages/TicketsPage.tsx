@@ -1,113 +1,119 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Hammer, MapPin, Calendar, UserCircle, Plus } from 'lucide-react';
 import NewTicketModal from '../components/NewTicketModal';
+import ticketsService, { Ticket as ApiTicket } from '../services/ticketsService';
 
 interface Ticket {
   id: string;
+  rawId: number;
   titulo: string;
   desc: string;
   ubicacion: string;
   fecha: string;
-  estado: 'Urgente' | 'En proceso' | 'Pendiente' | 'Resuelto';
+  estado: string;
+  prioridad: string;
+  area: string;
   tecnico: string;
   bgImg: string | null;
 }
 
-// Componente Helper para las etiquetas de Estado
-const Badge = ({ estado }: { estado: 'Urgente' | 'En proceso' | 'Pendiente' | 'Resuelto' }) => {
+const Badge = ({ estado }: { estado: string }) => {
   const styles = {
-    'Urgente': 'bg-red-50 text-red-600 border-red-200',
-    'En proceso': 'bg-blue-50 text-blue-600 border-blue-200',
     'Pendiente': 'bg-amber-50 text-amber-600 border-amber-200',
-    'Resuelto': 'bg-green-50 text-green-600 border-green-200',
+    'Valorado': 'bg-blue-50 text-blue-600 border-blue-200',
+    'Autorizado': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    'En reparacion': 'bg-blue-50 text-blue-600 border-blue-200',
+    'En reparación': 'bg-blue-50 text-blue-600 border-blue-200',
+    'Rechazado': 'bg-red-50 text-red-600 border-red-200',
+    'Reparado': 'bg-green-50 text-green-600 border-green-200',
   };
+  const className = styles[estado as keyof typeof styles] || 'bg-slate-50 text-slate-600 border-slate-200';
   
   return (
-    <span className={`px-2.5 py-1 rounded-lg text-[0.65rem] font-black tracking-wider uppercase border flex items-center gap-1 ${styles[estado]}`}>
-      {estado === 'Urgente' && <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>}
+    <span className={`px-2.5 py-1 rounded-lg text-[0.65rem] font-black tracking-wider uppercase border flex items-center gap-1 ${className}`}>
+      {estado === 'Pendiente' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>}
       {estado}
     </span>
   );
 };
 
+const formatTicket = (ticket: ApiTicket): Ticket => ({
+  id: `TK-${String(ticket.id).padStart(3, '0')}`,
+  rawId: ticket.id,
+  titulo: ticket.titulo,
+  desc: ticket.descripcion_desperfecto,
+  ubicacion: ticket.ubicacion,
+  fecha: new Date(ticket.created_at).toLocaleDateString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }),
+  estado: ticket.estado?.nombre || 'Pendiente',
+  prioridad: ticket.prioridad?.nombre || 'Sin prioridad',
+  area: ticket.area?.nombre || 'Sin area',
+  tecnico: 'Sin asignar',
+  bgImg: null,
+});
+
 const TicketsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Todos');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadTickets = async () => {
+    try {
+      const data = await ticketsService.getMyTickets();
+      setTickets(data.map(formatTicket));
+    } catch (error) {
+      console.error(error);
+      setTickets([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTickets();
+
+    window.addEventListener('tickets:created', loadTickets);
+
+    return () => {
+      window.removeEventListener('tickets:created', loadTickets);
+    };
+  }, []);
   
-  // Datos temporales de prueba para la UI
-  const allTickets: Ticket[] = [
-    {
-      id: 'TK-001',
-      titulo: 'Fuga de agua en baño principal',
-      desc: 'Tubería rota bajo el lavabo, agua acumulada en el piso. Requiere atención inmediata antes de que dañe las instalaciones eléctricas.',
-      ubicacion: 'Edificio A — Baño 1er piso',
-      fecha: '12 Jun 2026',
-      estado: 'Urgente',
-      tecnico: 'Ing. Ramírez',
-      bgImg: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=200&h=200&fit=crop',
-    },
-    {
-      id: 'TK-002',
-      titulo: 'Silla rota en laboratorio de cómputo',
-      desc: 'Una de las sillas del laboratorio tiene la base fracturada. Riesgo de accidente para los alumnos.',
-      ubicacion: 'Laboratorio de Cómputo — Aula 12',
-      fecha: '10 Jun 2026',
-      estado: 'En proceso',
-      tecnico: 'Mtro. López',
-      bgImg: null,
-    },
-    {
-      id: 'TK-003',
-      titulo: 'Luminaria fundida en pasillo',
-      desc: 'El foco del extremo norte del pasillo dejó de funcionar, generando zona oscura que puede ser peligrosa.',
-      ubicacion: 'Edificio B — Pasillo 2do piso',
-      fecha: '08 Jun 2026',
-      estado: 'Pendiente',
-      tecnico: 'Sin asignar',
-      bgImg: null,
-    },
-    {
-      id: 'TK-004',
-      titulo: 'Proyector sin señal de imagen',
-      desc: 'El proyector no mostraba imagen. Se reemplazó el cable HDMI y el adaptador. Problema resuelto satisfactoriamente.',
-      ubicacion: 'Aula 7 — Edificio Principal',
-      fecha: '05 Jun 2026',
-      estado: 'Resuelto',
-      tecnico: 'Téc. García',
-      bgImg: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=200&h=200&fit=crop',
-    },
-    {
-      id: 'TK-005',
-      titulo: 'Cerradura dañada en dirección',
-      desc: 'La cerradura de la puerta principal de dirección está dañada, no cierra correctamente. Riesgo de seguridad.',
-      ubicacion: 'Dirección — Planta baja',
-      fecha: '03 Jun 2026',
-      estado: 'Pendiente',
-      tecnico: 'Sin asignar',
-      bgImg: null,
-    },
-  ];
-  
-  // Lógica de filtrado
-  const filteredTickets = allTickets.filter(ticket => {
-    if (activeFilter === 'Todos') return true;
-    return ticket.estado === activeFilter;
-  });
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((ticket) => {
+      const matchesFilter = activeFilter === 'Todos' || ticket.estado === activeFilter;
+      const normalizedSearch = searchTerm.trim().toLowerCase();
+
+      if (!normalizedSearch) return matchesFilter;
+
+      return matchesFilter && [
+        ticket.id,
+        ticket.titulo,
+        ticket.desc,
+        ticket.ubicacion,
+        ticket.area,
+        ticket.prioridad,
+      ].some((value) => value.toLowerCase().includes(normalizedSearch));
+    });
+  }, [activeFilter, searchTerm, tickets]);
+
+  const filters = ['Todos', 'Pendiente', 'Valorado', 'Autorizado', 'En reparacion', 'Rechazado', 'Reparado'];
   
   return (
     <div className="p-4 md:p-8 flex flex-col gap-6 w-full max-w-7xl mx-auto">
-      
-      {/* Montamos el Modal aquí para uso exclusivo de esta página si se requiere */}
-      <NewTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <NewTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onCreated={loadTickets} />
     
-      {/* Header de la página */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Gestión de Tickets</h1>
-          <p className="text-sm font-medium text-slate-500 mt-1">{filteredTickets.length} de {allTickets.length} reportes</p>
+          <p className="text-sm font-medium text-slate-500 mt-1">{filteredTickets.length} de {tickets.length} reportes</p>
         </div>
         
-        {/* Botón Nuevo Reporte (Solo visible en Desktop, en móvil se usa el Bottom Nav) */}
         <button 
           onClick={() => setIsModalOpen(true)}
           className="hidden md:flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2d6a4f] hover:bg-[#1e4535] text-white rounded-xl font-bold transition-all text-sm shadow-md"
@@ -116,19 +122,19 @@ const TicketsPage = () => {
         </button>
       </div>
     
-      {/* Barra de Búsqueda */}
       <div className="relative w-full shadow-sm">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
         <input 
           type="text" 
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
           placeholder="Buscar por título, ubicación o ID..." 
           className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium"
         />
       </div>
     
-      {/* Filtros (Pills) */}
       <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-        {['Todos', 'Urgente', 'Pendiente', 'En proceso', 'Resuelto'].map((filter) => (
+        {filters.map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
@@ -140,31 +146,34 @@ const TicketsPage = () => {
           >
             {filter}
             <span className={`text-[0.65rem] px-1.5 py-0.5 rounded-md ${activeFilter === filter ? 'bg-white/20' : 'bg-slate-100'}`}>
-              {filter === 'Todos' ? allTickets.length : allTickets.filter(t => t.estado === filter).length}
+              {filter === 'Todos' ? tickets.length : tickets.filter((ticket) => ticket.estado === filter).length}
             </span>
           </button>
         ))}
       </div>
     
-      {/* Lista de Tickets */}
       <div className="flex flex-col gap-3 mt-2">
-        {filteredTickets.map((ticket) => (
-          <div key={ticket.id} className="bg-white rounded-[1.5rem] p-2 pr-4 md:pr-6 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow cursor-pointer">
-            
-            {/* Imagen o Icono Placeholder */}
-            <div className={`w-full md:w-40 h-36 rounded-[1.2rem] shrink-0 overflow-hidden relative flex items-center justify-center bg-slate-50 border border-slate-100 ${ticket.estado === 'Urgente' ? 'border-red-100 bg-red-50/30' : ''}`}>
+        {isLoading && (
+          <div className="py-20 text-center text-sm font-bold text-slate-500">Cargando tickets...</div>
+        )}
+
+        {!isLoading && filteredTickets.map((ticket) => (
+          <div key={ticket.rawId} className="bg-white rounded-[1.5rem] p-2 pr-4 md:pr-6 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow cursor-pointer">
+            <div className="w-full md:w-40 h-36 rounded-[1.2rem] shrink-0 overflow-hidden relative flex items-center justify-center bg-slate-50 border border-slate-100">
               {ticket.bgImg ? (
                 <img src={ticket.bgImg} alt="Evidencia" className="w-full h-full object-cover" />
               ) : (
-                <Hammer size={32} className={ticket.estado === 'En proceso' ? 'text-blue-200' : 'text-slate-200'} />
+                <Hammer size={32} className={ticket.estado === 'En reparacion' ? 'text-blue-200' : 'text-slate-200'} />
               )}
             </div>
     
-            {/* Contenido de la Tarjeta */}
             <div className="flex-1 px-3 pb-3 md:p-2 min-w-0 w-full">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-2">
                   <Badge estado={ticket.estado} />
+                  <span className="px-2.5 py-1 rounded-lg text-[0.65rem] font-black tracking-wider uppercase border bg-slate-50 text-slate-600 border-slate-200">
+                    {ticket.prioridad}
+                  </span>
                 </div>
                 <span className="text-[0.65rem] font-mono font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">{ticket.id}</span>
               </div>
@@ -173,10 +182,10 @@ const TicketsPage = () => {
               <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4 max-w-3xl">{ticket.desc}</p>
               
               <div className="flex flex-wrap items-center gap-y-2 gap-x-5 text-[0.7rem] font-medium text-slate-500 pt-3 border-t border-slate-50">
-                <div className="flex items-center gap-1.5"><MapPin size={14} className="text-slate-400"/> {ticket.ubicacion}</div>
+                <div className="flex items-center gap-1.5"><MapPin size={14} className="text-slate-400"/> {ticket.area} - {ticket.ubicacion}</div>
                 <div className="flex items-center gap-1.5"><Calendar size={14} className="text-slate-400"/> {ticket.fecha}</div>
                 <div className="flex items-center gap-1.5 md:ml-auto font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                  <UserCircle size={14} className={ticket.tecnico === 'Sin asignar' ? 'text-slate-400' : 'text-[#52b788]'}/> 
+                  <UserCircle size={14} className="text-slate-400"/> 
                   {ticket.tecnico}
                 </div>
               </div>
@@ -184,14 +193,13 @@ const TicketsPage = () => {
           </div>
         ))}
     
-        {/* Estado Vacío (Por si se filtra y no hay resultados) */}
-        {filteredTickets.length === 0 && (
+        {!isLoading && filteredTickets.length === 0 && (
           <div className="py-20 text-center flex flex-col items-center justify-center">
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
               <Search size={24} />
             </div>
             <h3 className="text-slate-800 font-bold mb-1">No hay reportes</h3>
-            <p className="text-slate-500 text-sm">No se encontraron tickets con la categoría seleccionada.</p>
+            <p className="text-slate-500 text-sm">No se encontraron tickets con los criterios seleccionados.</p>
           </div>
         )}
       </div>

@@ -1,29 +1,63 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Upload } from 'lucide-react';
+import ticketsService, { TicketCatalogs } from '../services/ticketsService';
 
 interface NewTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCreated?: () => void;
 }
 
-const NewTicketModal = ({ isOpen, onClose }: NewTicketModalProps) => {
-  const [priority, setPriority] = useState('Media');
+const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => {
+  const [catalogs, setCatalogs] = useState<TicketCatalogs | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const loadCatalogs = async () => {
+      try {
+        const data = await ticketsService.getCatalogs();
+        setCatalogs(data);
+      } catch (error) {
+        console.error(error);
+        setMessage('No fue posible cargar los catalogos del formulario.');
+      }
+    };
+
+    loadCatalogs();
+  }, [isOpen]);
 
   // Prevenir renderizado si no está abierto
   if (!isOpen) return null;
 
-  // Se añade <HTMLFormElement> para un correcto tipado en TypeScript
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setMessage(null);
+
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
 
-    // Inyectamos el estado de la prioridad seleccionada
-    data.priority = priority;
+    try {
+      await ticketsService.createTicket({
+        titulo: String(formData.get('titulo')),
+        ubicacion: String(formData.get('ubicacion')),
+        descripcion_desperfecto: String(formData.get('descripcion_desperfecto')),
+        area_id: Number(formData.get('area_id')),
+        tipo_desperfecto_id: Number(formData.get('tipo_desperfecto_id')),
+        prioridad_id: Number(formData.get('prioridad_id')),
+      });
 
-    console.log("Datos listos para enviar al backend:", data);
-    // TODO: Enviar al servicio HTTP
-    onClose();
+      setMessage('Ticket creado correctamente.');
+      onCreated?.();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      setMessage('No fue posible crear el ticket. Revisa los campos e intenta nuevamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -65,7 +99,7 @@ const NewTicketModal = ({ isOpen, onClose }: NewTicketModalProps) => {
               </label>
               <input 
                 type="text" 
-                name="title"
+                name="titulo"
                 placeholder="Ej. Fuga de agua en baño" 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
                 required
@@ -79,7 +113,7 @@ const NewTicketModal = ({ isOpen, onClose }: NewTicketModalProps) => {
               </label>
               <input 
                 type="text" 
-                name="location"
+                name="ubicacion"
                 placeholder="Ej. Aula 7, Edificio B" 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
                 required
@@ -92,12 +126,46 @@ const NewTicketModal = ({ isOpen, onClose }: NewTicketModalProps) => {
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Descripción
               </label>
               <textarea 
-                name="description"
+                name="descripcion_desperfecto"
                 rows={4}
                 placeholder="Describe el problema con detalle..." 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400 resize-none"
                 required
               ></textarea>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2 ml-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Area
+              </label>
+              <select
+                name="area_id"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700"
+                required
+              >
+                <option value="">Selecciona un area</option>
+                {catalogs?.areas.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.nombre}{area.sede ? ` - ${area.sede.nombre}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2 ml-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Tipo de desperfecto
+              </label>
+              <select
+                name="tipo_desperfecto_id"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700"
+                required
+              >
+                <option value="">Selecciona un tipo</option>
+                {catalogs?.tipos_desperfectos.map((tipo) => (
+                  <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
+                ))}
+              </select>
             </div>
 
             {/* Subir Evidencia */}
@@ -121,16 +189,22 @@ const NewTicketModal = ({ isOpen, onClose }: NewTicketModalProps) => {
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Prioridad
               </label>
               <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
+                name="prioridad_id"
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700"
+                required
               >
-                <option value="Baja">Baja</option>
-                <option value="Media">Media</option>
-                <option value="Alta">Alta</option>
-                <option value="Urgente">Urgente</option>
+                <option value="">Selecciona una prioridad</option>
+                {catalogs?.prioridades.map((prioridad) => (
+                  <option key={prioridad.id_prioridad} value={prioridad.id_prioridad}>{prioridad.nombre}</option>
+                ))}
               </select>
             </div>
+
+            {message && (
+              <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                {message}
+              </p>
+            )}
 
           </form>
         </div>
@@ -147,9 +221,10 @@ const NewTicketModal = ({ isOpen, onClose }: NewTicketModalProps) => {
           <button 
             type="submit" 
             form="new-ticket-form"
+            disabled={isSubmitting}
             className="flex-1 py-3.5 bg-[#163d2a] hover:bg-[#1e4535] text-white rounded-xl font-bold transition-all active:scale-[0.98] shadow-lg shadow-[#163d2a]/20 text-sm"
           >
-            Enviar Reporte
+            {isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
           </button>
         </div>
 
