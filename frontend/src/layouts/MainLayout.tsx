@@ -13,18 +13,36 @@ import {
   GraduationCap
 } from 'lucide-react';
 import NewTicketModal from '../modules/tickets/components/NewTicketModal';
+import { logout } from '../modules/auth/services/authService';
 
 const MainLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // Asumiendo que usas react-router-dom, en un entorno de prueba a veces useNavigate falla
   // Si da error en la vista previa, reemplázalo con una redirección manual, pero en VS Code funcionará.
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    navigate('/login'); 
+  const clearLocalSession = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+  };
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+    } catch (error) {
+      console.error('No fue posible cerrar sesion en el backend:', error);
+    } finally {
+      clearLocalSession();
+      navigate('/login', { replace: true });
+    }
   };
 
   const navItems = [
@@ -104,7 +122,7 @@ const MainLayout = () => {
             className="flex items-center justify-center gap-2 w-full py-3 bg-[#c0392b]/10 text-[#e07b72] border border-[#c0392b]/20 rounded-xl font-bold text-[0.85rem] hover:bg-[#c0392b]/20 transition-colors"
           >
             <LogOut size={16} />
-            Cerrar sesión
+            {isLoggingOut ? 'Cerrando...' : 'Cerrar sesión'}
           </button>
         </div>
       </aside>
@@ -209,7 +227,7 @@ const MainLayout = () => {
 
             <div className="p-5 border-t border-white/10">
               <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl w-full font-bold text-[0.85rem] transition-colors">
-                <LogOut size={18} /> Cerrar sesión
+                <LogOut size={18} /> {isLoggingOut ? 'Cerrando...' : 'Cerrar sesión'}
               </button>
             </div>
           </div>
