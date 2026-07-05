@@ -13,10 +13,16 @@ Thumbs.db
 frontend/node_modules/
 frontend/dist/
 frontend/dist-ssr/
+frontend/.vite/
 frontend/*.local
+frontend/.eslintcache
+frontend/coverage/
+frontend/.turbo/
+frontend/.parcel-cache/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # =========================
 # 3. Backend (Laravel / PHP) - Post MVP
@@ -26,9 +32,20 @@ backend/public/build
 backend/public/hot
 backend/public/storage
 backend/storage/*.key
+backend/storage/app/public/
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+backend/bootstrap/cache/*
 backend/Homestead.json
 backend/Homestead.yaml
 backend/.phpunit.result.cache
+backend/phpunit.xml.dist
+backend/.php-cs-fixer.cache
+backend/.phpunit.cache/
+backend/composer.lock
+backend/package-lock.json
 
 # =========================
 # 4. Variables de Entorno (¡Súper importante!)
@@ -38,5 +55,18 @@ backend/.phpunit.result.cache
 .env.*.local
 frontend/.env
 backend/.env
+
+# =========================
+# 5. Archivos temporales y respaldos
+# =========================
+*.swp
+*.swo
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+backup/
+backups/
 
 .gitkeep

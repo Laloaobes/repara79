@@ -18,6 +18,36 @@ export interface AreaTicket extends TicketCatalogItem {
   sede?: TicketCatalogItem | null;
 }
 
+export interface ValoracionTecnico {
+  id: number;
+  name: string;
+}
+
+export interface MaterialItem {
+  descripcion: string;
+  costo: number;
+}
+
+export interface Valoracion {
+  id: number;
+  ticket_id: number;
+  diagnostico: string;
+  materiales?: MaterialItem[] | null;
+  costo_estimado?: string | number | null;
+  tiempo_estimado_horas?: number | null;
+  estado: string;
+  observaciones?: string | null;
+  motivo_rechazo?: string | null;
+  tecnico?: ValoracionTecnico | null;
+  created_at: string;
+}
+
+export interface TicketUsuario {
+  id: number;
+  name: string;
+  email?: string;
+}
+
 export interface Ticket {
   id: number;
   titulo: string;
@@ -28,6 +58,16 @@ export interface Ticket {
   tipo_desperfecto?: TicketCatalogItem | null;
   estado?: TicketCatalogItem | null;
   prioridad?: PrioridadTicket | null;
+  usuario?: TicketUsuario | null;
+  valoracion?: Valoracion | null;
+}
+
+export interface CreateValoracionPayload {
+  ticket_id: number;
+  diagnostico: string;
+  materiales?: MaterialItem[];
+  tiempo_estimado_horas?: number;
+  observaciones?: string;
 }
 
 export interface TicketCatalogs {
@@ -61,6 +101,16 @@ const ticketsService = {
   async getCatalogs(): Promise<TicketCatalogs> {
     const response = await apiClient.get('/ticket-catalogs');
     return response.data;
+  },
+
+  async getTicketById(id: number): Promise<Ticket> {
+    const response = await apiClient.get(`/tickets/${id}`);
+    return response.data.data;
+  },
+
+  async createValoracion(data: CreateValoracionPayload): Promise<Valoracion> {
+    const response = await apiClient.post('/valoraciones', data);
+    return response.data.data;
   },
 };
 

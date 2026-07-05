@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Models\TipoUsuario;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +15,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         $tipoUsuario = TipoUsuario::firstOrCreate([
-            'nombre' => 'Usuario Registrado',
+            'nombre' => 'Responsable del Lugar',
         ]);
 
         $user = User::create([
@@ -75,6 +76,26 @@ class AuthController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'telefono' => $user->telefono,
+            'apellido_paterno' => $user->apellido_paterno,
+            'apellido_materno' => $user->apellido_materno,
+            'rol' => $user->tipoUsuario->nombre
+        ]);
+    }
+
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        $user = auth()->user();
+
+        $user->update($request->validated());
+
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'telefono' => $user->telefono,
+            'apellido_paterno' => $user->apellido_paterno,
+            'apellido_materno' => $user->apellido_materno,
             'rol' => $user->tipoUsuario->nombre
         ]);
     }

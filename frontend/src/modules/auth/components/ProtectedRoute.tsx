@@ -1,44 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { me } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
 
-const clearLocalSession = () => {
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('user_data');
-};
+interface ProtectedRouteProps {
+  /** Si se omite, la ruta solo exige sesión iniciada (sin restricción de rol). */
+  allowedRoles?: string[];
+}
 
-const ProtectedRoute = () => {
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
+  const { isLoading, isAuthenticated, role } = useAuth();
 
-  useEffect(() => {
-    const validateSession = async () => {
-      const token = localStorage.getItem('auth_token');
-
-      if (!token) {
-        clearLocalSession();
-        setIsAuthenticated(false);
-        setIsCheckingSession(false);
-        return;
-      }
-
-      try {
-        const user = await me();
-        localStorage.setItem('user_data', JSON.stringify(user));
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Sesion local invalida o expirada:', error);
-        clearLocalSession();
-        setIsAuthenticated(false);
-      } finally {
-        setIsCheckingSession(false);
-      }
-    };
-
-    validateSession();
-  }, []);
-
-  if (isCheckingSession) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">
@@ -51,6 +23,10 @@ const ProtectedRoute = () => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && (!role || !allowedRoles.includes(role))) {
+    return <Navigate to="/no-autorizado" replace />;
   }
 
   return <Outlet />;
