@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   // Estados para controlar la UI
-  const [activeTab, setActiveTab] = useState('register'); 
+  const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
   
   const navigate = useNavigate();
