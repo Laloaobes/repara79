@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import NewTicketModal from '../../tickets/components/NewTicketModal';
 import ticketsService, { Ticket as ApiTicket } from '../../tickets/services/ticketsService';
+import { me } from '../../auth/services/authService';
 
 interface Ticket {
   id: string;
@@ -27,13 +28,21 @@ interface Ticket {
   bgImg: string | null;
 }
 
+const getStoredUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user_data') || 'null');
+  } catch {
+    return null;
+  }
+};
+
 const DashboardPage = () => {
   const navigate = useNavigate();
-  // Ahora los datos inician vacíos esperando a la Base de Datos
   const [stats, setStats] = useState({ total: 0, urgentes: 0, enProceso: 0, resueltos: 0, pendientes: 0 });
   const [recientes, setRecientes] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState('Usuario');
 
   const formatTicket = (ticket: ApiTicket): Ticket => ({
     id: `TK-${String(ticket.id).padStart(3, '0')}`,
@@ -75,7 +84,24 @@ const DashboardPage = () => {
   };
 
   useEffect(() => {
+    const storedUser = getStoredUser();
+    if (storedUser?.name) {
+      setCurrentUserName(storedUser.name);
+    }
+
+    const loadCurrentUser = async () => {
+      try {
+        const user = await me();
+        if (user?.name) {
+          setCurrentUserName(user.name);
+        }
+      } catch (error) {
+        console.error('No fue posible cargar el perfil del usuario', error);
+      }
+    };
+
     loadTickets();
+    loadCurrentUser();
 
     window.addEventListener('tickets:created', loadTickets);
 
@@ -115,7 +141,7 @@ const DashboardPage = () => {
           </div>
           
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight">
-            Bienvenido, Ángel 👋
+            Bienvenido, {currentUserName} 👋
           </h1>
           <p className="text-white/80 text-[0.95rem] md:text-base font-medium max-w-md leading-relaxed">
             Tienes <strong className="text-[#fca5a5]">{stats.urgentes} reportes prioritarios</strong> y <strong className="text-[#fde68a]">{stats.pendientes} pendientes</strong> registrados.
@@ -156,7 +182,6 @@ const DashboardPage = () => {
         </div>
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col gap-4 relative">
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center"><Wrench size={20} /></div>
-          <span className="absolute top-5 right-5 text-xs font-bold text-[#52b788]">+2</span>
           <div>
             <h3 className="text-3xl font-black text-slate-800">{stats.enProceso}</h3>
             <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">En proceso</p>
@@ -164,7 +189,6 @@ const DashboardPage = () => {
         </div>
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col gap-4 relative">
           <div className="w-10 h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center"><CheckCircle2 size={20} /></div>
-          <span className="absolute top-5 right-5 text-xs font-bold text-[#52b788]">+5</span>
           <div>
             <h3 className="text-3xl font-black text-slate-800">{stats.resueltos}</h3>
             <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">Resueltos</p>
@@ -181,18 +205,26 @@ const DashboardPage = () => {
         
         {/* Progress Bar Multi-color */}
         <div className="h-2.5 w-full bg-slate-100 rounded-full flex overflow-hidden gap-0.5">
-          <div style={{ width: '15%' }} className="bg-red-500 h-full"></div>
-          <div style={{ width: '25%' }} className="bg-amber-500 h-full"></div>
-          <div style={{ width: '30%' }} className="bg-blue-500 h-full"></div>
-          <div style={{ width: '30%' }} className="bg-green-500 h-full"></div>
+          {[
+            { key: 'urgentes', value: stats.urgentes, color: 'bg-red-500' },
+            { key: 'pendientes', value: stats.pendientes, color: 'bg-amber-500' },
+            { key: 'enProceso', value: stats.enProceso, color: 'bg-blue-500' },
+            { key: 'resueltos', value: stats.resueltos, color: 'bg-green-500' },
+          ].map((segment) => (
+            <div
+              key={segment.key}
+              style={{ flex: stats.total > 0 ? segment.value / stats.total : 0 }}
+              className={`${segment.color} h-full`}
+            />
+          ))}
         </div>
         
         {/* Leyenda */}
         <div className="flex flex-wrap gap-4 mt-4">
-          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-red-500"></span> Urgente (1)</div>
-          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Pendiente (2)</div>
-          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-blue-500"></span> En proceso (2)</div>
-          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-green-500"></span> Resuelto (2)</div>
+          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-red-500"></span> Urgente ({stats.urgentes})</div>
+          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Pendiente ({stats.pendientes})</div>
+          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-blue-500"></span> En proceso ({stats.enProceso})</div>
+          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-green-500"></span> Resuelto ({stats.resueltos})</div>
         </div>
       </div>
 

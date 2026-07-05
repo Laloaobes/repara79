@@ -13,22 +13,25 @@ import {
   GraduationCap
 } from 'lucide-react';
 import NewTicketModal from '../modules/tickets/components/NewTicketModal';
-import { logout } from '../modules/auth/services/authService';
+import { useAuth } from '../modules/auth/context/AuthContext';
+
+const getInitials = (name: string) => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+
+  if (words.length === 0) return 'U';
+  if (words.length === 1) return words[0][0].toUpperCase();
+
+  return `${words[0][0]}${words[1][0]}`.toUpperCase();
+};
 
 const MainLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  
-  // Asumiendo que usas react-router-dom, en un entorno de prueba a veces useNavigate falla
-  // Si da error en la vista previa, reemplázalo con una redirección manual, pero en VS Code funcionará.
-  const navigate = useNavigate();
+  const { user: currentUser, logoutUser } = useAuth();
 
-  const clearLocalSession = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-  };
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -36,11 +39,8 @@ const MainLayout = () => {
     setIsLoggingOut(true);
 
     try {
-      await logout();
-    } catch (error) {
-      console.error('No fue posible cerrar sesion en el backend:', error);
+      await logoutUser();
     } finally {
-      clearLocalSession();
       navigate('/login', { replace: true });
     }
   };
@@ -110,11 +110,11 @@ const MainLayout = () => {
         <div className="p-4 border-t border-white/10 mt-auto">
           <div className="flex items-center gap-3 px-2 mb-4">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] flex items-center justify-center font-bold text-sm border-2 border-white/10">
-              ÁG
+              {getInitials(currentUser?.name || 'Usuario')}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[0.85rem] font-bold text-white truncate">Ángel García</p>
-              <p className="text-[0.7rem] text-[#e8f5ee]/50">Administrador</p>
+              <p className="text-[0.85rem] font-bold text-white truncate">{currentUser?.name || 'Usuario'}</p>
+              <p className="text-[0.7rem] text-[#e8f5ee]/50">{currentUser?.rol || 'Usuario'}</p>
             </div>
           </div>
           <button 
@@ -158,12 +158,11 @@ const MainLayout = () => {
                 className={`p-2 rounded-xl transition-colors relative ${notificationsOpen ? 'bg-green-50 text-[#2d6a4f]' : 'text-slate-500 hover:bg-slate-100'}`}
               >
                 <Bell size={22} />
-                <span className="absolute top-1 right-1 w-4 h-4 bg-[#ef4444] text-white text-[0.6rem] font-bold rounded-full flex items-center justify-center border-2 border-white">3</span>
               </button>
             </div>
 
             <div className="hidden md:flex w-9 h-9 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] items-center justify-center font-bold text-white text-sm shadow-sm cursor-pointer border-2 border-green-100">
-              ÁG
+              {getInitials(currentUser?.name || 'Usuario')}
             </div>
           </div>
         </header>
@@ -193,10 +192,10 @@ const MainLayout = () => {
             </div>
             
             <div className="p-5 border-b border-white/10 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#52b788] flex items-center justify-center font-bold">ÁG</div>
+              <div className="w-10 h-10 rounded-full bg-[#52b788] flex items-center justify-center font-bold">{getInitials(currentUser?.name || 'Usuario')}</div>
               <div>
-                <p className="text-[0.85rem] font-bold">Ángel García</p>
-                <p className="text-[0.7rem] text-white/50">Administrador</p>
+                <p className="text-[0.85rem] font-bold">{currentUser?.name || 'Usuario'}</p>
+                <p className="text-[0.7rem] text-white/50">{currentUser?.rol || 'Usuario'}</p>
               </div>
             </div>
 

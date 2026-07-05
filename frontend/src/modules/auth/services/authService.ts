@@ -35,3 +35,16 @@ const response = await apiClient.get('/me');
 return response.data;
 
 }
+
+export async function updateProfile(data: {
+name: string;
+email: string;
+telefono?: string;
+apellido_paterno?: string;
+apellido_materno?: string;
+}) {
+const response = await apiClient.put('/me', data);
+
+return response.data;
+
+}

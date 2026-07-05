@@ -1,44 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { me } from '../services/authService';
-
-const clearLocalSession = () => {
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('user_data');
-};
+import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = () => {
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isLoading, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    const validateSession = async () => {
-      const token = localStorage.getItem('auth_token');
-
-      if (!token) {
-        clearLocalSession();
-        setIsAuthenticated(false);
-        setIsCheckingSession(false);
-        return;
-      }
-
-      try {
-        const user = await me();
-        localStorage.setItem('user_data', JSON.stringify(user));
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Sesion local invalida o expirada:', error);
-        clearLocalSession();
-        setIsAuthenticated(false);
-      } finally {
-        setIsCheckingSession(false);
-      }
-    };
-
-    validateSession();
-  }, []);
-
-  if (isCheckingSession) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4">

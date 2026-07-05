@@ -71,4 +71,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(Ticket::class, 'usuario_id');
     }
+
+    public function valoraciones(): HasMany
+    {
+        return $this->hasMany(Valoracion::class, 'tecnico_id');
+    }
+
+    /**
+     * Compara el rol del usuario (tipos_usuarios.nombre) contra una lista permitida.
+     */
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->tipoUsuario?->nombre, $roles, true);
+    }
 }
