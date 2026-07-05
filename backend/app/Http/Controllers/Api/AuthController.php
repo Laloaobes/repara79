@@ -15,7 +15,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         $tipoUsuario = TipoUsuario::firstOrCreate([
-            'nombre' => 'Usuario Registrado',
+            'nombre' => 'Responsable del Lugar',
         ]);
 
         $user = User::create([

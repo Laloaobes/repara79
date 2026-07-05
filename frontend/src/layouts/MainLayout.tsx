@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ClipboardList,
+  ClipboardCheck,
+  Wrench,
+  Users,
   Settings,
   Plus,
   LogOut,
@@ -14,6 +17,7 @@ import {
 } from 'lucide-react';
 import NewTicketModal from '../modules/tickets/components/NewTicketModal';
 import { useAuth } from '../modules/auth/context/AuthContext';
+import { ROLES, Role } from '../constants/roles';
 
 const getInitials = (name: string) => {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -24,14 +28,78 @@ const getInitials = (name: string) => {
   return `${words[0][0]}${words[1][0]}`.toUpperCase();
 };
 
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  path: string;
+  /** Si se omite, el ítem es visible para cualquier rol autenticado. */
+  roles?: Role[];
+}
+
+const ROLES_ADMIN_TIER: Role[] = [ROLES.SUBDIRECTOR_ADMINISTRATIVO, ROLES.ADMINISTRADOR];
+
+const getDashboardLabel = (role: Role | null) =>
+  role && ROLES_ADMIN_TIER.includes(role) ? 'Dashboard General' : 'Dashboard';
+
+const buildNavItems = (role: Role | null): NavItem[] => [
+  { id: 'dashboard', label: getDashboardLabel(role), icon: <LayoutDashboard size={20} />, path: '/' },
+  {
+    id: 'mis-tickets',
+    label: 'Mis Tickets',
+    icon: <ClipboardList size={20} />,
+    path: '/tickets',
+    roles: [ROLES.RESPONSABLE_DEL_LUGAR],
+  },
+  {
+    id: 'tickets-pendientes',
+    label: 'Tickets Pendientes',
+    icon: <ClipboardList size={20} />,
+    path: '/tickets',
+    roles: [ROLES.PERSONAL_MANTENIMIENTO],
+  },
+  {
+    id: 'mis-valoraciones',
+    label: 'Mis Valoraciones',
+    icon: <Wrench size={20} />,
+    path: '/mis-valoraciones',
+    roles: [ROLES.PERSONAL_MANTENIMIENTO],
+  },
+  {
+    id: 'valoraciones-por-aprobar',
+    label: 'Valoraciones por Aprobar',
+    icon: <ClipboardCheck size={20} />,
+    path: '/valoraciones-por-aprobar',
+    roles: ROLES_ADMIN_TIER,
+  },
+  {
+    id: 'gestion-usuarios',
+    label: 'Gestión de Usuarios',
+    icon: <Users size={20} />,
+    path: '/usuarios',
+    roles: ROLES_ADMIN_TIER,
+  },
+  { id: 'ajustes', label: 'Ajustes', icon: <Settings size={20} />, path: '/ajustes' },
+];
+
+// Roles que reportan desperfectos directamente; mantenimiento y subdirección/administración no.
+const ROLES_QUE_REPORTAN: Role[] = [ROLES.RESPONSABLE_DEL_LUGAR];
+
 const MainLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { user: currentUser, logoutUser } = useAuth();
+  const { user: currentUser, role, logoutUser } = useAuth();
 
   const navigate = useNavigate();
+
+  const navItems = useMemo(
+    () => buildNavItems(role as Role | null).filter((item) => !item.roles || (role && item.roles.includes(role as Role))),
+    [role]
+  );
+
+  const canReportTicket = !!role && ROLES_QUE_REPORTAN.includes(role as Role);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -45,19 +113,13 @@ const MainLayout = () => {
     }
   };
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/' },
-    { id: 'tickets', label: 'Tickets', icon: <ClipboardList size={20} />, path: '/tickets' },
-    { id: 'ajustes', label: 'Ajustes', icon: <Settings size={20} />, path: '/ajustes' },
-  ];
-
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 font-sans">
-      
+
       {/* Modal global desencadenado por el Sidebar/BottomNav */}
-      <NewTicketModal 
-        isOpen={isNewTicketModalOpen} 
-        onClose={() => setIsNewTicketModalOpen(false)} 
+      <NewTicketModal
+        isOpen={isNewTicketModalOpen}
+        onClose={() => setIsNewTicketModalOpen(false)}
         onCreated={() => window.dispatchEvent(new Event('tickets:created'))}
       />
 
@@ -84,10 +146,11 @@ const MainLayout = () => {
             <NavLink
               key={item.id}
               to={item.path}
+              end={item.path === '/'}
               className={({ isActive }) => `
                 flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-                ${isActive 
-                  ? 'bg-[#52b788]/20 text-[#52b788] font-bold border border-[#52b788]/30' 
+                ${isActive
+                  ? 'bg-[#52b788]/20 text-[#52b788] font-bold border border-[#52b788]/30'
                   : 'text-[#e8f5ee]/70 hover:bg-white/5 hover:text-white font-medium border border-transparent'}
               `}
             >
@@ -96,15 +159,17 @@ const MainLayout = () => {
             </NavLink>
           ))}
 
-          <div className="mt-4 pt-4 border-t border-white/10 px-2">
-            <button 
-              onClick={() => setIsNewTicketModalOpen(true)}
-              className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-[#52b788] to-[#2d9e6b] text-white rounded-xl font-bold text-[0.9rem] shadow-lg shadow-[#52b788]/30 hover:opacity-90 transition-opacity active:scale-95"
-            >
-              <Plus size={18} strokeWidth={2.5} />
-              Nuevo Reporte
-            </button>
-          </div>
+          {canReportTicket && (
+            <div className="mt-4 pt-4 border-t border-white/10 px-2">
+              <button
+                onClick={() => setIsNewTicketModalOpen(true)}
+                className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-[#52b788] to-[#2d9e6b] text-white rounded-xl font-bold text-[0.9rem] shadow-lg shadow-[#52b788]/30 hover:opacity-90 transition-opacity active:scale-95"
+              >
+                <Plus size={18} strokeWidth={2.5} />
+                Reportar Desperfecto
+              </button>
+            </div>
+          )}
         </nav>
 
         <div className="p-4 border-t border-white/10 mt-auto">
@@ -117,7 +182,7 @@ const MainLayout = () => {
               <p className="text-[0.7rem] text-[#e8f5ee]/50">{currentUser?.rol || 'Usuario'}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="flex items-center justify-center gap-2 w-full py-3 bg-[#c0392b]/10 text-[#e07b72] border border-[#c0392b]/20 rounded-xl font-bold text-[0.85rem] hover:bg-[#c0392b]/20 transition-colors"
           >
@@ -151,9 +216,9 @@ const MainLayout = () => {
             <button className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl">
               <Search size={20} />
             </button>
-            
+
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
                 className={`p-2 rounded-xl transition-colors relative ${notificationsOpen ? 'bg-green-50 text-[#2d6a4f]' : 'text-slate-500 hover:bg-slate-100'}`}
               >
@@ -178,7 +243,7 @@ const MainLayout = () => {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)} />
-          
+
           <div className="w-[280px] h-full bg-[#163d2a] text-white flex flex-col relative shadow-2xl z-10 animate-in slide-in-from-left-4 duration-200">
             <div className="p-5 flex items-center justify-between border-b border-white/10">
               <div className="flex items-center gap-3">
@@ -190,7 +255,7 @@ const MainLayout = () => {
               </div>
               <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-white/50 hover:text-white"><X size={20}/></button>
             </div>
-            
+
             <div className="p-5 border-b border-white/10 flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#52b788] flex items-center justify-center font-bold">{getInitials(currentUser?.name || 'Usuario')}</div>
               <div>
@@ -204,6 +269,7 @@ const MainLayout = () => {
                 <NavLink
                   key={item.id}
                   to={item.path}
+                  end={item.path === '/'}
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) => `
                     flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium text-[0.9rem]
@@ -213,15 +279,17 @@ const MainLayout = () => {
                   {item.icon} {item.label}
                 </NavLink>
               ))}
-              <button 
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setIsNewTicketModalOpen(true);
-                }}
-                className="mt-4 flex items-center gap-2 w-full py-3.5 bg-[#52b788] hover:bg-[#40916c] text-white rounded-xl font-bold justify-center transition-colors"
-              >
-                <Plus size={18} /> Nuevo Reporte
-              </button>
+              {canReportTicket && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsNewTicketModalOpen(true);
+                  }}
+                  className="mt-4 flex items-center gap-2 w-full py-3.5 bg-[#52b788] hover:bg-[#40916c] text-white rounded-xl font-bold justify-center transition-colors"
+                >
+                  <Plus size={18} /> Reportar Desperfecto
+                </button>
+              )}
             </nav>
 
             <div className="p-5 border-t border-white/10">
@@ -241,6 +309,7 @@ const MainLayout = () => {
           <NavLink
             key={item.id}
             to={item.path}
+            end={item.path === '/'}
             className={({ isActive }) => `
               flex flex-col items-center justify-center w-1/4 py-2 gap-1 transition-colors
               ${isActive ? 'text-[#2d6a4f]' : 'text-slate-400 hover:text-slate-600'}
@@ -250,15 +319,17 @@ const MainLayout = () => {
             <span className="text-[0.6rem] font-bold">{item.label}</span>
           </NavLink>
         ))}
-        <button 
-          onClick={() => setIsNewTicketModalOpen(true)}
-          className="w-1/4 flex flex-col items-center justify-center py-2 gap-1 outline-none group"
-        >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] text-white flex items-center justify-center shadow-lg shadow-[#52b788]/40 -mt-4 border-4 border-white group-active:scale-95 transition-transform">
-            <Plus size={20} strokeWidth={3} />
-          </div>
-          <span className="text-[0.6rem] font-bold text-[#2d6a4f]">Nuevo</span>
-        </button>
+        {canReportTicket && (
+          <button
+            onClick={() => setIsNewTicketModalOpen(true)}
+            className="w-1/4 flex flex-col items-center justify-center py-2 gap-1 outline-none group"
+          >
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] text-white flex items-center justify-center shadow-lg shadow-[#52b788]/40 -mt-4 border-4 border-white group-active:scale-95 transition-transform">
+              <Plus size={20} strokeWidth={3} />
+            </div>
+            <span className="text-[0.6rem] font-bold text-[#2d6a4f]">Nuevo</span>
+          </button>
+        )}
       </nav>
 
     </div>

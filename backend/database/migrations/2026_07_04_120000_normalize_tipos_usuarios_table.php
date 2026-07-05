@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     private array $officialTypes = [
-        'Subdirector Administrativo',
-        'Personal de Mantenimiento',
         'Responsable del Lugar',
-        'Usuario Registrado',
+        'Personal de Mantenimiento',
+        'Subdirector Administrativo',
+        'Administrador',
     ];
 
     public function up(): void
@@ -22,8 +22,9 @@ return new class extends Migration
             $this->mergeTypeRows($typeName, $canonicalIds[$typeName]);
         }
 
-        $this->moveUsersFromType('Administrador', $canonicalIds['Subdirector Administrativo']);
-        $this->moveUsersFromUnknownTypes($canonicalIds['Usuario Registrado']);
+        // Cualquier rol legado que ya no exista en el catálogo (p.ej. "Usuario Registrado")
+        // cae a "Responsable del Lugar", el rol base por defecto.
+        $this->moveUsersFromUnknownTypes($canonicalIds['Responsable del Lugar']);
 
         Schema::table('tipos_usuarios', function (Blueprint $table) {
             $table->unique('nombre');
@@ -81,28 +82,6 @@ return new class extends Migration
 
         DB::table('tipos_usuarios')
             ->whereIn('id', $duplicateIds)
-            ->delete();
-    }
-
-    private function moveUsersFromType(string $sourceTypeName, int $targetTypeId): void
-    {
-        $sourceIds = DB::table('tipos_usuarios')
-            ->where('nombre', $sourceTypeName)
-            ->pluck('id');
-
-        if ($sourceIds->isEmpty()) {
-            return;
-        }
-
-        DB::table('users')
-            ->whereIn('tipo_usuario_id', $sourceIds)
-            ->update([
-                'tipo_usuario_id' => $targetTypeId,
-                'updated_at' => now(),
-            ]);
-
-        DB::table('tipos_usuarios')
-            ->whereIn('id', $sourceIds)
             ->delete();
     }
 

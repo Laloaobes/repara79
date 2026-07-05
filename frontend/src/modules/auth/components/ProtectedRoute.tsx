@@ -2,8 +2,13 @@ import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = () => {
-  const { isLoading, isAuthenticated } = useAuth();
+interface ProtectedRouteProps {
+  /** Si se omite, la ruta solo exige sesión iniciada (sin restricción de rol). */
+  allowedRoles?: string[];
+}
+
+const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
+  const { isLoading, isAuthenticated, role } = useAuth();
 
   if (isLoading) {
     return (
@@ -18,6 +23,10 @@ const ProtectedRoute = () => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && (!role || !allowedRoles.includes(role))) {
+    return <Navigate to="/no-autorizado" replace />;
   }
 
   return <Outlet />;
