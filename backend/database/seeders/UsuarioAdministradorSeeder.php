@@ -10,17 +10,23 @@ class UsuarioAdministradorSeeder extends Seeder
 {
     public function run(): void
     {
-        $tipoAdministrador = TipoUsuario::where('nombre', 'Administrador')->first();
+        $tipoSubdirector = TipoUsuario::firstOrCreate([
+            'nombre' => 'Subdirector Administrativo',
+        ]);
 
-        User::firstOrCreate(
+        $user = User::firstOrCreate(
             [
                 'email' => 'admin@repara79.com'
             ],
             [
-                'tipo_usuario_id' => $tipoAdministrador?->id,
-                'name' => 'Administrador',
+                'tipo_usuario_id' => $tipoSubdirector->id,
+                'name' => 'Subdirector Administrativo',
                 'password' => '12345678'
             ]
         );
+
+        $user->forceFill([
+            'tipo_usuario_id' => $tipoSubdirector->id,
+        ])->save();
     }
 }

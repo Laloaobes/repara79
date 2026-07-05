@@ -13,7 +13,6 @@ class TiposUsuariosSeeder extends Seeder
     public function run(): void
     {
         foreach ([
-            'Administrador',
             'Subdirector Administrativo',
             'Personal de Mantenimiento',
             'Responsable del Lugar',
