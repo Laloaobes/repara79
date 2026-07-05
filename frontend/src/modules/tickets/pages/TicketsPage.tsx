@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Hammer, MapPin, Calendar, UserCircle, Plus } from 'lucide-react';
 import NewTicketModal from '../components/NewTicketModal';
 import ticketsService, { Ticket as ApiTicket } from '../services/ticketsService';
@@ -56,6 +57,7 @@ const formatTicket = (ticket: ApiTicket): Ticket => ({
 });
 
 const TicketsPage = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
@@ -158,7 +160,11 @@ const TicketsPage = () => {
         )}
 
         {!isLoading && filteredTickets.map((ticket) => (
-          <div key={ticket.rawId} className="bg-white rounded-[1.5rem] p-2 pr-4 md:pr-6 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow cursor-pointer">
+          <div
+            key={ticket.rawId}
+            onClick={() => navigate(`/tickets/${ticket.rawId}`)}
+            className="bg-white rounded-[1.5rem] p-2 pr-4 md:pr-6 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow cursor-pointer"
+          >
             <div className="w-full md:w-40 h-36 rounded-[1.2rem] shrink-0 overflow-hidden relative flex items-center justify-center bg-slate-50 border border-slate-100">
               {ticket.bgImg ? (
                 <img src={ticket.bgImg} alt="Evidencia" className="w-full h-full object-cover" />

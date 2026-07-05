@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { login, register } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 
 
@@ -18,8 +19,9 @@ const LoginPage = () => {
   // Estados para controlar la UI
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   // Función para manejar el envío del formulario (Preparado para producción)
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,7 +46,8 @@ const LoginPage = () => {
         );
 
         localStorage.setItem("auth_token", response.token);
-        localStorage.setItem("user_data", JSON.stringify(response.user));
+
+        await refreshUser();
 
         navigate("/");
       } catch (error) {
@@ -60,7 +63,7 @@ const LoginPage = () => {
 
         localStorage.setItem("auth_token", response.token);
 
-        localStorage.setItem("user_data", JSON.stringify(response.user));
+        await refreshUser();
 
         navigate("/");
       } catch (error) {

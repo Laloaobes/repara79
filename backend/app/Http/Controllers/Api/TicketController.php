@@ -15,14 +15,15 @@ class TicketController extends Controller
 {
     public function index()
     {
-        $tickets = Ticket::with(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad'])
-            ->where('usuario_id', auth()->id())
-            ->latest()
-            ->get();
+        $query = Ticket::with(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad']);
+
+        if (!auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo', 'Administrador')) {
+            $query->where('usuario_id', auth()->id());
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $tickets,
+            'data' => $query->latest()->get(),
         ]);
     }
 
@@ -52,13 +53,15 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket)
     {
-        if ($ticket->usuario_id !== auth()->id()) {
+        $canViewAnyTicket = auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo', 'Administrador');
+
+        if (!$canViewAnyTicket && $ticket->usuario_id !== auth()->id()) {
             abort(404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $ticket->load(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad']),
+            'data' => $ticket->load(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad', 'usuario', 'valoracion.tecnico']),
         ]);
     }
 

@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Hammer, 
-  Plus, 
-  ClipboardList, 
-  AlertTriangle, 
-  Wrench, 
+import {
+  Hammer,
+  Plus,
+  ClipboardList,
+  AlertTriangle,
+  Wrench,
   CheckCircle2,
   MapPin,
   Calendar,
-  UserCircle
+  UserCircle,
+  ClipboardCheck,
+  Users
 } from 'lucide-react';
 import NewTicketModal from '../../tickets/components/NewTicketModal';
 import ticketsService, { Ticket as ApiTicket } from '../../tickets/services/ticketsService';
+import { useAuth } from '../../auth/context/AuthContext';
+import { ROLES } from '../../../constants/roles';
 
 interface Ticket {
   id: string;
@@ -29,11 +33,16 @@ interface Ticket {
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  // Ahora los datos inician vacíos esperando a la Base de Datos
+  const { user } = useAuth();
+  const role = user?.rol ?? null;
   const [stats, setStats] = useState({ total: 0, urgentes: 0, enProceso: 0, resueltos: 0, pendientes: 0 });
   const [recientes, setRecientes] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
+
+  const isMantenimiento = role === ROLES.PERSONAL_MANTENIMIENTO;
+  const isAdminTier = role === ROLES.SUBDIRECTOR_ADMINISTRATIVO || role === ROLES.ADMINISTRADOR;
+  const puedeReportar = role === ROLES.RESPONSABLE_DEL_LUGAR;
 
   const formatTicket = (ticket: ApiTicket): Ticket => ({
     id: `TK-${String(ticket.id).padStart(3, '0')}`,
@@ -54,6 +63,8 @@ const DashboardPage = () => {
 
   const loadTickets = async () => {
     try {
+      // El backend ya escala los resultados por rol: propios para Responsable del Lugar,
+      // todos para Personal de Mantenimiento, Subdirector Administrativo y Administrador.
       const tickets = await ticketsService.getMyTickets();
       const formattedTickets = tickets.map(formatTicket);
 
@@ -93,6 +104,28 @@ const DashboardPage = () => {
     );
   }
 
+  const subtitle = isAdminTier
+    ? (
+      <>
+        El plantel tiene <strong className="text-[#fde68a]">{stats.total} tickets registrados</strong>, con{' '}
+        <strong className="text-[#fca5a5]">{stats.urgentes} urgentes</strong> y{' '}
+        <strong className="text-[#fde68a]">{stats.pendientes} pendientes</strong>.
+      </>
+    ) : isMantenimiento
+      ? (
+        <>
+          Hay <strong className="text-[#fde68a]">{stats.pendientes} tickets pendientes de valorar</strong> y{' '}
+          <strong className="text-[#fca5a5]">{stats.urgentes} marcados como urgentes</strong>.
+        </>
+      ) : (
+        <>
+          Tienes <strong className="text-[#fca5a5]">{stats.urgentes} reportes prioritarios</strong> y{' '}
+          <strong className="text-[#fde68a]">{stats.pendientes} pendientes</strong> registrados.
+        </>
+      );
+
+  const recientesTitle = isAdminTier || isMantenimiento ? 'Tickets recientes del plantel' : 'Reportes recientes';
+
   return (
     <>
       <NewTicketModal
@@ -101,39 +134,69 @@ const DashboardPage = () => {
         onCreated={loadTickets}
       />
       <div className="p-4 md:p-8 lg:p-10 max-w-6xl mx-auto flex flex-col gap-6 md:gap-8">
-      
+
       {/* 1. BANNER DE BIENVENIDA */}
       <div className="bg-gradient-to-r from-[#163d2a] to-[#2d6a4f] rounded-[2rem] p-6 md:p-10 relative overflow-hidden shadow-xl shadow-[#2d6a4f]/20">
         <div className="absolute right-[-20px] top-[-20px] opacity-10 pointer-events-none">
           <Hammer size={240} strokeWidth={1} className="text-white transform -rotate-12" />
         </div>
-        
+
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-[#a7f3d0] text-xs font-bold mb-4 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-[#52b788] animate-pulse" />
             Sistema activo
           </div>
-          
+
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight">
-            Bienvenido, Ángel 👋
+            Bienvenido, {user?.name || 'Usuario'} 👋
           </h1>
           <p className="text-white/80 text-[0.95rem] md:text-base font-medium max-w-md leading-relaxed">
-            Tienes <strong className="text-[#fca5a5]">{stats.urgentes} reportes prioritarios</strong> y <strong className="text-[#fde68a]">{stats.pendientes} pendientes</strong> registrados.
+            {subtitle}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => setIsNewTicketModalOpen(true)}
-              className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#52b788] hover:bg-[#40916c] text-white rounded-xl font-bold shadow-lg shadow-[#52b788]/30 transition-all active:scale-95 text-sm"
-            >
-              <Plus size={18} strokeWidth={2.5} /> Nuevo Reporte
-            </button>
+            {puedeReportar && (
+              <button
+                onClick={() => setIsNewTicketModalOpen(true)}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#52b788] hover:bg-[#40916c] text-white rounded-xl font-bold shadow-lg shadow-[#52b788]/30 transition-all active:scale-95 text-sm"
+              >
+                <Plus size={18} strokeWidth={2.5} /> Reportar Desperfecto
+              </button>
+            )}
+
             <button
               onClick={() => navigate('/tickets')}
               className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-bold transition-all text-sm backdrop-blur-sm"
             >
-              <ClipboardList size={18} /> Ver todos los tickets
+              <ClipboardList size={18} /> {isMantenimiento ? 'Ver tickets pendientes' : 'Ver todos los tickets'}
             </button>
+
+            {isAdminTier && (
+              <button
+                onClick={() => navigate('/valoraciones-por-aprobar')}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-bold transition-all text-sm backdrop-blur-sm"
+              >
+                <ClipboardCheck size={18} /> Valoraciones por aprobar
+              </button>
+            )}
+
+            {isMantenimiento && (
+              <button
+                onClick={() => navigate('/mis-valoraciones')}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-bold transition-all text-sm backdrop-blur-sm"
+              >
+                <Wrench size={18} /> Mis valoraciones
+              </button>
+            )}
+
+            {isAdminTier && (
+              <button
+                onClick={() => navigate('/usuarios')}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-bold transition-all text-sm backdrop-blur-sm"
+              >
+                <Users size={18} /> Gestión de usuarios
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -144,7 +207,9 @@ const DashboardPage = () => {
           <div className="w-10 h-10 rounded-xl bg-[#2d6a4f]/10 text-[#2d6a4f] flex items-center justify-center"><ClipboardList size={20} /></div>
           <div>
             <h3 className="text-3xl font-black text-slate-800">{stats.total}</h3>
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">Total de tickets</p>
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">
+              {isAdminTier || isMantenimiento ? 'Tickets del plantel' : 'Total de tickets'}
+            </p>
           </div>
         </div>
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col gap-4">
@@ -156,7 +221,6 @@ const DashboardPage = () => {
         </div>
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col gap-4 relative">
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center"><Wrench size={20} /></div>
-          <span className="absolute top-5 right-5 text-xs font-bold text-[#52b788]">+2</span>
           <div>
             <h3 className="text-3xl font-black text-slate-800">{stats.enProceso}</h3>
             <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">En proceso</p>
@@ -164,7 +228,6 @@ const DashboardPage = () => {
         </div>
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col gap-4 relative">
           <div className="w-10 h-10 rounded-xl bg-green-50 text-green-500 flex items-center justify-center"><CheckCircle2 size={20} /></div>
-          <span className="absolute top-5 right-5 text-xs font-bold text-[#52b788]">+5</span>
           <div>
             <h3 className="text-3xl font-black text-slate-800">{stats.resueltos}</h3>
             <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">Resueltos</p>
@@ -178,42 +241,52 @@ const DashboardPage = () => {
           <h2 className="text-sm font-bold text-slate-800">Distribución de tickets</h2>
           <span className="text-xs font-medium text-slate-400">{stats.total} total</span>
         </div>
-        
+
         {/* Progress Bar Multi-color */}
         <div className="h-2.5 w-full bg-slate-100 rounded-full flex overflow-hidden gap-0.5">
-          <div style={{ width: '15%' }} className="bg-red-500 h-full"></div>
-          <div style={{ width: '25%' }} className="bg-amber-500 h-full"></div>
-          <div style={{ width: '30%' }} className="bg-blue-500 h-full"></div>
-          <div style={{ width: '30%' }} className="bg-green-500 h-full"></div>
+          {[
+            { key: 'urgentes', value: stats.urgentes, color: 'bg-red-500' },
+            { key: 'pendientes', value: stats.pendientes, color: 'bg-amber-500' },
+            { key: 'enProceso', value: stats.enProceso, color: 'bg-blue-500' },
+            { key: 'resueltos', value: stats.resueltos, color: 'bg-green-500' },
+          ].map((segment) => (
+            <div
+              key={segment.key}
+              style={{ flex: stats.total > 0 ? segment.value / stats.total : 0 }}
+              className={`${segment.color} h-full`}
+            />
+          ))}
         </div>
-        
+
         {/* Leyenda */}
         <div className="flex flex-wrap gap-4 mt-4">
-          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-red-500"></span> Urgente (1)</div>
-          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Pendiente (2)</div>
-          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-blue-500"></span> En proceso (2)</div>
-          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-green-500"></span> Resuelto (2)</div>
+          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-red-500"></span> Urgente ({stats.urgentes})</div>
+          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Pendiente ({stats.pendientes})</div>
+          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-blue-500"></span> En proceso ({stats.enProceso})</div>
+          <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-green-500"></span> Resuelto ({stats.resueltos})</div>
         </div>
       </div>
 
       {/* 4. REPORTES RECIENTES */}
       <div>
         <div className="flex justify-between items-end mb-4 px-1">
-          <h2 className="text-lg font-extrabold text-slate-800 tracking-tight">Reportes recientes</h2>
+          <h2 className="text-lg font-extrabold text-slate-800 tracking-tight">{recientesTitle}</h2>
           <button onClick={() => navigate('/tickets')} className="text-xs font-bold text-[#2d6a4f] hover:underline">Ver todos &rarr;</button>
         </div>
-        
+
         <div className="flex flex-col gap-3">
           {recientes.length === 0 && (
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm text-center">
-              <h3 className="text-slate-800 font-bold mb-1">Aun no tienes reportes</h3>
-              <p className="text-slate-500 text-sm">Crea tu primer ticket de mantenimiento para verlo aqui.</p>
+              <h3 className="text-slate-800 font-bold mb-1">Aun no hay reportes</h3>
+              <p className="text-slate-500 text-sm">
+                {puedeReportar ? 'Crea tu primer ticket de mantenimiento para verlo aqui.' : 'Cuando se registren tickets aparecerán aqui.'}
+              </p>
             </div>
           )}
 
           {recientes.map((ticket) => (
             <div key={ticket.id} className="bg-white rounded-3xl p-2 pr-4 md:pr-6 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center hover:shadow-md transition-shadow cursor-pointer">
-              
+
               {/* Imagen o Icono Placeholder */}
               <div className={`w-full md:w-32 h-32 rounded-2xl shrink-0 overflow-hidden relative flex items-center justify-center bg-slate-50 border border-slate-100 ${ticket.estado === 'Urgente' ? 'border-red-100 bg-red-50/30' : ''}`}>
                 {ticket.bgImg ? (
@@ -233,10 +306,10 @@ const DashboardPage = () => {
                   <div className="hidden md:block mb-2"><Badge estado={ticket.estado} /></div>
                   <span className="text-[0.65rem] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">{ticket.id}</span>
                 </div>
-                
+
                 <h3 className="text-base font-bold text-slate-800 mb-1.5 truncate">{ticket.titulo}</h3>
                 <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">{ticket.desc}</p>
-                
+
                 <div className="flex flex-wrap gap-4 text-[0.7rem] font-medium text-slate-400">
                   <div className="flex items-center gap-1.5"><MapPin size={12} /> {ticket.ubicacion}</div>
                   <div className="flex items-center gap-1.5"><Calendar size={12} /> {ticket.fecha}</div>

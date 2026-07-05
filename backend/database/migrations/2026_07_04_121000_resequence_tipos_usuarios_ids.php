@@ -6,10 +6,10 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     private array $targetIds = [
-        'Subdirector Administrativo' => 1,
+        'Responsable del Lugar' => 1,
         'Personal de Mantenimiento' => 2,
-        'Responsable del Lugar' => 3,
-        'Usuario Registrado' => 4,
+        'Subdirector Administrativo' => 3,
+        'Administrador' => 4,
     ];
 
     public function up(): void

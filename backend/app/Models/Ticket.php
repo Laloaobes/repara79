@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
@@ -51,5 +52,10 @@ class Ticket extends Model
     public function prioridad(): BelongsTo
     {
         return $this->belongsTo(PrioridadTicket::class, 'prioridad_id', 'id_prioridad');
+    }
+
+    public function valoracion(): HasOne
+    {
+        return $this->hasOne(Valoracion::class);
     }
 }
