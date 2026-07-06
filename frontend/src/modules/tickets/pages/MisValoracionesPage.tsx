@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Wrench, Calendar, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import valoracionesService, { MiValoracion } from '../services/valoracionesService';
 import { formatCurrency } from '../../../utils/currency';
 
@@ -25,6 +25,7 @@ const MisValoracionesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [deletingMaterial, setDeletingMaterial] = useState<string | null>(null);
 
   useEffect(() => {
     const loadValoraciones = async () => {
@@ -52,6 +53,25 @@ const MisValoracionesPage = () => {
       }
       return next;
     });
+  };
+
+  const handleDeleteMaterial = async (valoracionId: number, materialIndex: number) => {
+    const deletionKey = `${valoracionId}-${materialIndex}`;
+
+    setDeletingMaterial(deletionKey);
+    setError(null);
+
+    try {
+      const updatedValoracion = await valoracionesService.deleteMaterial(valoracionId, materialIndex);
+      setValoraciones((prev) => prev.map((valoracion) => (
+        valoracion.id === valoracionId ? updatedValoracion : valoracion
+      )));
+    } catch (err) {
+      console.error(err);
+      setError('No fue posible eliminar el material de la valoración.');
+    } finally {
+      setDeletingMaterial(null);
+    }
   };
 
   if (isLoading) {
@@ -138,6 +158,44 @@ const MisValoracionesPage = () => {
                         {valoracion.motivo_rechazo}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {valoracion.materiales && valoracion.materiales.length > 0 && (
+                  <div className="border-t border-slate-100 pt-3">
+                    <p className="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400 mb-2">
+                      Materiales
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {valoracion.materiales.map((material, index) => {
+                        const deletionKey = `${valoracion.id}-${index}`;
+                        const canDeleteMaterial = valoracion.estado === 'Pendiente';
+
+                        return (
+                          <div
+                            key={`${material.descripcion}-${index}`}
+                            className="flex items-center gap-3 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-700 truncate">{material.descripcion}</p>
+                              <p className="text-[0.7rem] text-slate-500">{formatCurrency(material.costo)}</p>
+                            </div>
+
+                            {canDeleteMaterial && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMaterial(valoracion.id, index)}
+                                disabled={deletingMaterial === deletionKey}
+                                className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Eliminar material"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
