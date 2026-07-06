@@ -39,6 +39,11 @@ const valoracionesService = {
     const response = await apiClient.post(`/valoraciones/${id}/rechazar`, { motivo_rechazo: motivoRechazo });
     return response.data.data;
   },
+
+  async deleteMaterial(valoracionId: number, materialIndex: number): Promise<MiValoracion> {
+    const response = await apiClient.delete(`/valoraciones/${valoracionId}/materiales/${materialIndex}`);
+    return response.data.data;
+  },
 };
 
 export default valoracionesService;

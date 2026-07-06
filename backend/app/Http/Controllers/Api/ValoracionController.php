@@ -63,6 +63,43 @@ class ValoracionController extends Controller
         ]);
     }
 
+    public function destroyMaterial(Valoracion $valoracion, int $materialIndex)
+    {
+        if ($valoracion->tecnico_id !== auth()->id()) {
+            abort(404);
+        }
+
+        if ($valoracion->estado !== 'Pendiente') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo puedes eliminar materiales de una valoración pendiente.',
+            ], 422);
+        }
+
+        $materiales = $valoracion->materiales ?? [];
+
+        if (!array_key_exists($materialIndex, $materiales)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El material indicado no existe en la valoración.',
+            ], 404);
+        }
+
+        unset($materiales[$materialIndex]);
+        $materiales = array_values($materiales);
+
+        $valoracion->update([
+            'materiales' => $materiales,
+            'costo_estimado' => Collection::make($materiales)->sum('costo'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Material eliminado correctamente',
+            'data' => $valoracion->fresh(['tecnico', 'ticket.estado']),
+        ]);
+    }
+
     public function pendientes()
     {
         $valoraciones = Valoracion::with(['tecnico', 'ticket.area.sede', 'ticket.usuario'])

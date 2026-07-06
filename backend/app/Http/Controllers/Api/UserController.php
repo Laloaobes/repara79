@@ -14,18 +14,25 @@ class UserController extends Controller
         $usuarios = User::with('tipoUsuario')
             ->orderBy('name')
             ->get()
-            ->map(fn (User $user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'rol' => $user->tipoUsuario?->nombre,
-                'activo' => $user->activo,
-            ]);
+            ->map(fn (User $user) => $this->formatUser($user));
 
         return response()->json([
             'success' => true,
             'data' => $usuarios,
         ]);
+    }
+
+    public function show(User $usuario)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->formatUser($usuario->load('tipoUsuario')),
+        ]);
+    }
+
+    public function update(UpdateUserRoleRequest $request, User $usuario)
+    {
+        return $this->updateRole($request, $usuario);
     }
 
     public function updateRole(UpdateUserRoleRequest $request, User $usuario)
@@ -44,13 +51,18 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rol actualizado correctamente',
-            'data' => [
-                'id' => $usuario->id,
-                'name' => $usuario->name,
-                'email' => $usuario->email,
-                'rol' => $tipoUsuario->nombre,
-                'activo' => $usuario->activo,
-            ],
+            'data' => $this->formatUser($usuario->fresh('tipoUsuario')),
         ]);
+    }
+
+    private function formatUser(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'rol' => $user->tipoUsuario?->nombre,
+            'activo' => $user->activo,
+        ];
     }
 }
