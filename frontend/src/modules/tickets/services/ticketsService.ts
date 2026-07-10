@@ -31,12 +31,10 @@ export interface MaterialItem {
 export interface Valoracion {
   id: number;
   ticket_id: number;
-  diagnostico: string;
   materiales?: MaterialItem[] | null;
   costo_estimado?: string | number | null;
-  tiempo_estimado_horas?: number | null;
   estado: string;
-  observaciones?: string | null;
+  observaciones: string;
   motivo_rechazo?: string | null;
   tecnico?: ValoracionTecnico | null;
   created_at: string;
@@ -64,10 +62,8 @@ export interface Ticket {
 
 export interface CreateValoracionPayload {
   ticket_id: number;
-  diagnostico: string;
   materiales?: MaterialItem[];
-  tiempo_estimado_horas?: number;
-  observaciones?: string;
+  observaciones: string;
 }
 
 export interface TicketCatalogs {

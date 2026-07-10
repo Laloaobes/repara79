@@ -15,12 +15,10 @@ class StoreValoracionRequest extends FormRequest
     {
         return [
             'ticket_id' => ['required', 'integer', 'exists:tickets,id'],
-            'diagnostico' => ['required', 'string'],
             'materiales' => ['nullable', 'array'],
             'materiales.*.descripcion' => ['required_with:materiales', 'string', 'max:150'],
             'materiales.*.costo' => ['required_with:materiales', 'numeric', 'min:0'],
-            'tiempo_estimado_horas' => ['nullable', 'integer', 'min:1'],
-            'observaciones' => ['nullable', 'string'],
+            'observaciones' => ['required', 'string'],
         ];
     }
 }

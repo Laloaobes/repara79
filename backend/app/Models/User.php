@@ -74,7 +74,7 @@ class User extends Authenticatable
 
     public function valoraciones(): HasMany
     {
-        return $this->hasMany(Valoracion::class, 'tecnico_id');
+        return $this->hasMany(Valoracion::class, 'valorado_por');
     }
 
     /**

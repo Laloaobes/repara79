@@ -22,7 +22,7 @@ class UpdateUserRoleRequest extends FormRequest
                     'Responsable del Lugar',
                     'Personal de Mantenimiento',
                     'Subdirector Administrativo',
-                    'Administrador',
+                    'Usuario Registrado',
                 ]),
             ],
         ];

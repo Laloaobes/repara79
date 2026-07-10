@@ -25,6 +25,16 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('usuario_area', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('usuario_id')->constrained('users')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('area_id')->constrained('areas')->cascadeOnUpdate()->cascadeOnDelete();
+            $table->boolean('activo')->default(true);
+            $table->timestamps();
+
+            $table->unique(['usuario_id', 'area_id']);
+        });
+
         Schema::create('tipos_desperfectos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 100)->unique();
@@ -54,6 +64,7 @@ return new class extends Migration
         Schema::dropIfExists('prioridades_ticket');
         Schema::dropIfExists('estados_ticket');
         Schema::dropIfExists('tipos_desperfectos');
+        Schema::dropIfExists('usuario_area');
         Schema::dropIfExists('areas');
         Schema::dropIfExists('sedes');
     }

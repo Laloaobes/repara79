@@ -6,9 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RechazarValoracionRequest;
 use App\Http\Requests\StoreValoracionRequest;
 use App\Models\EstadoTicket;
+use App\Models\MaterialTicket;
 use App\Models\Ticket;
 use App\Models\Valoracion;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ValoracionController extends Controller
 {
@@ -25,35 +26,49 @@ class ValoracionController extends Controller
 
         $materiales = $request->validated('materiales', []) ?? [];
 
-        $valoracion = Valoracion::create([
-            ...$request->validated(),
-            'materiales' => $materiales,
-            'costo_estimado' => Collection::make($materiales)->sum('costo'),
-            'tecnico_id' => auth()->id(),
-            'estado' => 'Pendiente',
-        ]);
+        $valoracion = DB::transaction(function () use ($request, $ticket, $materiales) {
+            $valoracion = Valoracion::create([
+                'ticket_id' => $ticket->id,
+                'estado_general' => 'Pendiente',
+                'observaciones' => $request->validated('observaciones'),
+                'valorado_por' => auth()->id(),
+                'fecha_creacion' => now(),
+            ]);
 
-        $estadoValorado = EstadoTicket::firstOrCreate(
-            ['nombre' => 'Valorado'],
-            [
-                'descripcion' => 'El ticket fue valorado por el personal de mantenimiento.',
-                'orden' => 2,
-            ]
-        );
+            foreach ($materiales as $material) {
+                MaterialTicket::create([
+                    'solicitud_id' => $valoracion->id,
+                    'nombre_material' => $material['descripcion'],
+                    'cantidad' => 1,
+                    'costo_unitario' => $material['costo'],
+                    'estado_individual' => 'Pendiente',
+                ]);
+            }
 
-        $ticket->update(['estado_id' => $estadoValorado->id]);
+            $estadoValorado = EstadoTicket::firstOrCreate(
+                ['nombre' => 'Valorado'],
+                [
+                    'descripcion' => 'El ticket fue valorado por el personal de mantenimiento.',
+                    'orden' => 2,
+                ]
+            );
+
+            $ticket->update(['estado_id' => $estadoValorado->id]);
+
+            return $valoracion;
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Valoración registrada correctamente',
-            'data' => $valoracion->load('tecnico'),
+            'data' => $valoracion->load(['tecnico', 'materialesTicket']),
         ], 201);
     }
 
     public function misValoraciones()
     {
-        $valoraciones = Valoracion::with(['ticket.estado'])
-            ->where('tecnico_id', auth()->id())
+        $valoraciones = Valoracion::with(['ticket.estado', 'materialesTicket'])
+            ->where('valorado_por', auth()->id())
             ->latest()
             ->get();
 
@@ -102,8 +117,8 @@ class ValoracionController extends Controller
 
     public function pendientes()
     {
-        $valoraciones = Valoracion::with(['tecnico', 'ticket.area.sede', 'ticket.usuario'])
-            ->where('estado', 'Pendiente')
+        $valoraciones = Valoracion::with(['tecnico', 'ticket.area.sede', 'ticket.usuario', 'materialesTicket'])
+            ->where('estado_general', 'Pendiente')
             ->latest()
             ->get();
 
@@ -115,66 +130,106 @@ class ValoracionController extends Controller
 
     public function autorizar(Valoracion $valoracion)
     {
-        if ($valoracion->estado !== 'Pendiente') {
+        if ($valoracion->estado_general !== 'Pendiente') {
             return response()->json([
                 'success' => false,
                 'message' => 'Esta valoración ya fue procesada.',
             ], 422);
         }
 
-        $valoracion->update([
-            'estado' => 'Autorizada',
-            'revisado_por_id' => auth()->id(),
-            'revisado_at' => now(),
-        ]);
+        DB::transaction(function () use ($valoracion) {
+            $valoracion->update([
+                'estado_general' => 'Autorizada',
+                'validado_por' => auth()->id(),
+                'fecha_validacion' => now(),
+                'veces_revisada' => $valoracion->veces_revisada + 1,
+            ]);
 
-        $estadoAutorizado = EstadoTicket::firstOrCreate(
-            ['nombre' => 'Autorizado'],
-            [
-                'descripcion' => 'La valoración técnica fue autorizada por la subdirección.',
-                'orden' => 3,
-            ]
-        );
+            $estadoAutorizado = EstadoTicket::firstOrCreate(
+                ['nombre' => 'Autorizado'],
+                [
+                    'descripcion' => 'La valoración técnica fue autorizada por la subdirección.',
+                    'orden' => 3,
+                ]
+            );
 
-        $valoracion->ticket->update(['estado_id' => $estadoAutorizado->id]);
+            $valoracion->ticket->update(['estado_id' => $estadoAutorizado->id]);
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Valoración autorizada correctamente',
-            'data' => $valoracion->fresh(['tecnico', 'ticket']),
+            'data' => $valoracion->fresh(['tecnico', 'ticket', 'materialesTicket']),
         ]);
     }
 
     public function rechazar(RechazarValoracionRequest $request, Valoracion $valoracion)
     {
-        if ($valoracion->estado !== 'Pendiente') {
+        if ($valoracion->estado_general !== 'Pendiente') {
             return response()->json([
                 'success' => false,
                 'message' => 'Esta valoración ya fue procesada.',
             ], 422);
         }
 
-        $valoracion->update([
-            'estado' => 'Rechazada',
-            'motivo_rechazo' => $request->validated('motivo_rechazo'),
-            'revisado_por_id' => auth()->id(),
-            'revisado_at' => now(),
-        ]);
+        DB::transaction(function () use ($request, $valoracion) {
+            $valoracion->update([
+                'estado_general' => 'Rechazada',
+                'motivo_rechazo' => $request->validated('motivo_rechazo'),
+                'validado_por' => auth()->id(),
+                'fecha_validacion' => now(),
+                'veces_revisada' => $valoracion->veces_revisada + 1,
+            ]);
 
-        $estadoRechazado = EstadoTicket::firstOrCreate(
-            ['nombre' => 'Rechazado'],
-            [
-                'descripcion' => 'La valoración técnica fue rechazada por la subdirección.',
-                'orden' => 3,
-            ]
-        );
+            $estadoRechazado = EstadoTicket::firstOrCreate(
+                ['nombre' => 'Rechazado'],
+                [
+                    'descripcion' => 'La valoración técnica fue rechazada por la subdirección.',
+                    'orden' => 5,
+                ]
+            );
 
-        $valoracion->ticket->update(['estado_id' => $estadoRechazado->id]);
+            $valoracion->ticket->update(['estado_id' => $estadoRechazado->id]);
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Valoración rechazada correctamente',
-            'data' => $valoracion->fresh(['tecnico', 'ticket']),
+            'data' => $valoracion->fresh(['tecnico', 'ticket', 'materialesTicket']),
+        ]);
+    }
+
+    public function destroyMaterial(Valoracion $valoracion, int $materialIndex)
+    {
+        if ($valoracion->valorado_por !== auth()->id()) {
+            abort(404);
+        }
+
+        if ($valoracion->estado_general !== 'Pendiente') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo puedes eliminar materiales de una valoración pendiente.',
+            ], 422);
+        }
+
+        $material = $valoracion->materialesTicket()
+            ->orderBy('id')
+            ->get()
+            ->get($materialIndex);
+
+        if (!$material) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El material indicado no existe en la valoración.',
+            ], 404);
+        }
+
+        $material->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Material eliminado correctamente',
+            'data' => $valoracion->fresh(['tecnico', 'ticket.estado', 'materialesTicket']),
         ]);
     }
 }

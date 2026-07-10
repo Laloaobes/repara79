@@ -13,10 +13,10 @@ class TiposUsuariosSeeder extends Seeder
     public function run(): void
     {
         foreach ([
-            'Responsable del Lugar',
-            'Personal de Mantenimiento',
             'Subdirector Administrativo',
-            'Administrador',
+            'Personal de Mantenimiento',
+            'Responsable del Lugar',
+            'Usuario Registrado',
         ] as $nombre) {
             DB::table('tipos_usuarios')->updateOrInsert(
                 ['nombre' => $nombre],
