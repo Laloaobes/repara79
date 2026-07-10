@@ -17,7 +17,7 @@ class TicketController extends Controller
     {
         $query = Ticket::with(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad']);
 
-        if (!auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo', 'Administrador')) {
+        if (!auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo')) {
             $query->where('usuario_id', auth()->id());
         }
 
@@ -53,7 +53,7 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket)
     {
-        $canViewAnyTicket = auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo', 'Administrador');
+        $canViewAnyTicket = auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo');
 
         if (!$canViewAnyTicket && $ticket->usuario_id !== auth()->id()) {
             abort(404);

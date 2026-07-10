@@ -147,16 +147,6 @@ const ValoracionesPorAprobarPage = () => {
                 <span className="flex items-center gap-1.5"><Wrench size={14} /> Reportó: {selected.ticket.usuario?.name || 'Usuario'}</span>
               </div>
 
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-2">Diagnóstico</h3>
-                <p className="text-sm text-slate-700 leading-relaxed">{selected.diagnostico}</p>
-                {selected.tiempo_estimado_horas != null && (
-                  <p className="text-xs font-medium text-slate-500 mt-2">
-                    Tiempo estimado: {selected.tiempo_estimado_horas} hora(s)
-                  </p>
-                )}
-              </div>
-
               {selected.materiales && selected.materiales.length > 0 && (
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-2">Materiales y costos</h3>
@@ -180,8 +170,8 @@ const ValoracionesPorAprobarPage = () => {
 
               {selected.observaciones && (
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-2">Observaciones</h3>
-                  <p className="text-sm text-slate-600 italic">{selected.observaciones}</p>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-2">Observaciones de la valoración</h3>
+                  <p className="text-sm text-slate-700 leading-relaxed">{selected.observaciones}</p>
                 </div>
               )}
 
