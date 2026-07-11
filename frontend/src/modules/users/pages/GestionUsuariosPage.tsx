@@ -40,7 +40,7 @@ const GestionUsuariosPage = () => {
     setUsuarios((prev) => prev.map((u) => (u.id === usuario.id ? { ...u, rol: nuevoRol } : u)));
 
     try {
-      await usersService.updateUserRole(usuario.id, nuevoRol);
+      await usersService.updateUser(usuario.id, { rol: nuevoRol });
     } catch (err) {
       console.error(err);
       setUsuarios((prev) => prev.map((u) => (u.id === usuario.id ? { ...u, rol: rolAnterior } : u)));

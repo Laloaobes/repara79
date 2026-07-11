@@ -18,7 +18,7 @@ return new class extends Migration
             ->after('id')
             ->constrained('tipos_usuarios')
             ->cascadeOnUpdate()
-            ->restrictOnDelete();
+            ->nullOnDelete();
 
     });
 }

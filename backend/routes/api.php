@@ -25,15 +25,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:Personal de Mantenimiento')->group(function () {
         Route::post('/valoraciones', [ValoracionController::class, 'store']);
         Route::get('/valoraciones/mis-valoraciones', [ValoracionController::class, 'misValoraciones']);
+        Route::delete('/valoraciones/{valoracion}/materiales/{materialIndex}', [ValoracionController::class, 'destroyMaterial']);
     });
 
-    // Exclusivo de "Subdirector Administrativo" y "Administrador" (acceso equivalente).
-    Route::middleware('role:Subdirector Administrativo,Administrador')->group(function () {
+    // Exclusivo de "Subdirector Administrativo".
+    Route::middleware('role:Subdirector Administrativo')->group(function () {
         Route::get('/valoraciones/pendientes', [ValoracionController::class, 'pendientes']);
         Route::post('/valoraciones/{valoracion}/autorizar', [ValoracionController::class, 'autorizar']);
         Route::post('/valoraciones/{valoracion}/rechazar', [ValoracionController::class, 'rechazar']);
 
         Route::get('/usuarios', [UserController::class, 'index']);
+        Route::get('/usuarios/{usuario}', [UserController::class, 'show']);
+        Route::put('/usuarios/{usuario}', [UserController::class, 'update']);
         Route::put('/usuarios/{usuario}/rol', [UserController::class, 'updateRole']);
     });
 

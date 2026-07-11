@@ -15,9 +15,18 @@ const usersService = {
     return response.data.data;
   },
 
-  async updateUserRole(userId: number, rol: Role): Promise<AdminUser> {
-    const response = await apiClient.put(`/usuarios/${userId}/rol`, { rol });
+  async getUser(userId: number): Promise<AdminUser> {
+    const response = await apiClient.get(`/usuarios/${userId}`);
     return response.data.data;
+  },
+
+  async updateUser(userId: number, data: { rol: Role }): Promise<AdminUser> {
+    const response = await apiClient.put(`/usuarios/${userId}`, data);
+    return response.data.data;
+  },
+
+  async updateUserRole(userId: number, rol: Role): Promise<AdminUser> {
+    return this.updateUser(userId, { rol });
   },
 };
 

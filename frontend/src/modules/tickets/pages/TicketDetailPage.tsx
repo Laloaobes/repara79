@@ -54,7 +54,6 @@ const TicketDetailPage = () => {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const tiempoEstimado = formData.get('tiempo_estimado_horas');
 
     const materialesPayload = materiales
       .filter((m) => m.descripcion.trim() !== '')
@@ -63,10 +62,8 @@ const TicketDetailPage = () => {
     try {
       await ticketsService.createValoracion({
         ticket_id: ticket.id,
-        diagnostico: String(formData.get('diagnostico') || ''),
         materiales: materialesPayload.length > 0 ? materialesPayload : undefined,
-        tiempo_estimado_horas: tiempoEstimado ? Number(tiempoEstimado) : undefined,
-        observaciones: String(formData.get('observaciones') || '') || undefined,
+        observaciones: String(formData.get('observaciones') || ''),
       });
 
       setMateriales([]);
@@ -162,12 +159,7 @@ const TicketDetailPage = () => {
               <span className="w-fit px-2.5 py-1 rounded-lg text-[0.65rem] font-black tracking-wider uppercase border bg-blue-50 text-blue-600 border-blue-200">
                 {ticket.valoracion.estado}
               </span>
-              <p className="text-sm text-slate-700 leading-relaxed">{ticket.valoracion.diagnostico}</p>
-              {ticket.valoracion.tiempo_estimado_horas != null && (
-                <p className="text-xs font-medium text-slate-500">
-                  Tiempo estimado: {ticket.valoracion.tiempo_estimado_horas} hora(s)
-                </p>
-              )}
+              <p className="text-sm text-slate-700 leading-relaxed">{ticket.valoracion.observaciones}</p>
 
               {ticket.valoracion.materiales && ticket.valoracion.materiales.length > 0 && (
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
@@ -187,9 +179,6 @@ const TicketDetailPage = () => {
                 </div>
               )}
 
-              {ticket.valoracion.observaciones && (
-                <p className="text-xs text-slate-500 italic">{ticket.valoracion.observaciones}</p>
-              )}
               {ticket.valoracion.estado === 'Rechazada' && ticket.valoracion.motivo_rechazo && (
                 <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
                   Motivo de rechazo: {ticket.valoracion.motivo_rechazo}
@@ -209,17 +198,6 @@ const TicketDetailPage = () => {
               }
             >
               <form onSubmit={handleCreateValoracion} className="flex flex-col gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">Diagnóstico</label>
-                  <textarea
-                    name="diagnostico"
-                    rows={4}
-                    required
-                    placeholder="Describe el diagnóstico técnico..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm resize-none"
-                  />
-                </div>
-
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-xs font-bold text-slate-700">
@@ -272,25 +250,13 @@ const TicketDetailPage = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-2">
-                    Tiempo estimado (horas)
-                  </label>
-                  <input
-                    type="number"
-                    name="tiempo_estimado_horas"
-                    min={1}
-                    placeholder="Ej. 4"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">
-                    Observaciones (opcional)
+                    Observaciones de la valoración
                   </label>
                   <textarea
                     name="observaciones"
-                    rows={2}
-                    placeholder="Notas adicionales..."
+                    rows={4}
+                    required
+                    placeholder="Describe la revisión técnica realizada..."
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm resize-none"
                   />
                 </div>
