@@ -21,6 +21,7 @@ class StoreTicketRequest extends FormRequest
             'descripcion_desperfecto' => ['required', 'string'],
             'ubicacion' => ['required', 'string'],
             'otro_desperfecto' => ['nullable', 'string', 'max:150'],
+            'fotografia_inicial' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
         ];
     }
 }

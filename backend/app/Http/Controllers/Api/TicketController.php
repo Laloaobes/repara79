@@ -27,7 +27,7 @@ class TicketController extends Controller
         ]);
     }
 
-    public function store(StoreTicketRequest $request)
+   public function store(StoreTicketRequest $request)
     {
         $estadoPendiente = EstadoTicket::firstOrCreate(
             ['nombre' => 'Pendiente'],
@@ -37,8 +37,14 @@ class TicketController extends Controller
             ]
         );
 
+        $datos = $request->safe()->except('fotografia_inicial');
+
+        if ($request->hasFile('fotografia_inicial')) {
+            $datos['fotografia_inicial'] = $request->file('fotografia_inicial')->store('tickets', 'public');
+        }
+
         $ticket = Ticket::create([
-            ...$request->validated(),
+            ...$datos,
             'usuario_id' => auth()->id(),
             'estado_id' => $estadoPendiente->id,
             'fecha_reporte' => now(),
