@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { ClipboardCheck, MapPin, UserCircle, Wrench, X, Check, Ban } from 'lucide-react';
 import valoracionesService, { ValoracionPendiente } from '../services/valoracionesService';
 import { formatCurrency } from '../../../utils/currency';
@@ -18,7 +18,7 @@ const ValoracionesPorAprobarPage = () => {
       setValoraciones(data);
     } catch (err) {
       console.error(err);
-      setError('No fue posible cargar las valoraciones pendientes.');
+      setError('No fue posible cargar las valoraciones pendientes. Verifica que el backend esté activo y que las rutas de valoraciones respondan correctamente.');
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +46,7 @@ const ValoracionesPorAprobarPage = () => {
       closeModal();
     } catch (err) {
       console.error(err);
-      setError('No fue posible autorizar la valoración.');
+      setError('No fue posible autorizar la valoraciÃ³n.');
     } finally {
       setIsProcessing(false);
     }
@@ -63,7 +63,7 @@ const ValoracionesPorAprobarPage = () => {
       closeModal();
     } catch (err) {
       console.error(err);
-      setError('No fue posible rechazar la valoración.');
+      setError('No fue posible rechazar la valoraciÃ³n.');
     } finally {
       setIsProcessing(false);
     }
@@ -83,7 +83,7 @@ const ValoracionesPorAprobarPage = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-slate-900">Valoraciones por Aprobar</h1>
-          <p className="text-sm text-slate-500">{valoraciones.length} pendientes de revisión</p>
+          <p className="text-sm text-slate-500">{valoraciones.length} pendientes de revisiÃ³n</p>
         </div>
       </div>
 
@@ -96,7 +96,7 @@ const ValoracionesPorAprobarPage = () => {
       {valoraciones.length === 0 ? (
         <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-sm text-center">
           <h3 className="text-slate-800 font-bold mb-1">No hay valoraciones pendientes</h3>
-          <p className="text-slate-500 text-sm">Cuando mantenimiento registre una nueva, aparecerá aquí.</p>
+          <p className="text-slate-500 text-sm">Cuando mantenimiento registre una nueva, aparecerÃ¡ aquÃ­.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -109,7 +109,7 @@ const ValoracionesPorAprobarPage = () => {
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-slate-800 truncate">{valoracion.ticket.titulo}</h3>
                 <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-slate-500">
-                  <span className="flex items-center gap-1"><MapPin size={12} /> {valoracion.ticket.area?.nombre || 'Sin área'}</span>
+                  <span className="flex items-center gap-1"><MapPin size={12} /> {valoracion.ticket.area?.nombre || 'Sin Ã¡rea'}</span>
                   <span className="flex items-center gap-1"><UserCircle size={12} /> {valoracion.tecnico?.name || 'Sin asignar'}</span>
                 </div>
               </div>
@@ -143,8 +143,8 @@ const ValoracionesPorAprobarPage = () => {
 
             <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
               <div className="flex flex-wrap gap-4 text-xs font-medium text-slate-500">
-                <span className="flex items-center gap-1.5"><UserCircle size={14} /> Técnico: {selected.tecnico?.name || 'Sin asignar'}</span>
-                <span className="flex items-center gap-1.5"><Wrench size={14} /> Reportó: {selected.ticket.usuario?.name || 'Usuario'}</span>
+                <span className="flex items-center gap-1.5"><UserCircle size={14} /> TÃ©cnico: {selected.tecnico?.name || 'Sin asignar'}</span>
+                <span className="flex items-center gap-1.5"><Wrench size={14} /> ReportÃ³: {selected.ticket.usuario?.name || 'Usuario'}</span>
               </div>
 
               {selected.materiales && selected.materiales.length > 0 && (
@@ -170,7 +170,7 @@ const ValoracionesPorAprobarPage = () => {
 
               {selected.observaciones && (
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-2">Observaciones de la valoración</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-2">Observaciones de la valoraciÃ³n</h3>
                   <p className="text-sm text-slate-700 leading-relaxed">{selected.observaciones}</p>
                 </div>
               )}
@@ -189,7 +189,7 @@ const ValoracionesPorAprobarPage = () => {
                     onChange={(e) => setMotivoRechazo(e.target.value)}
                     rows={3}
                     autoFocus
-                    placeholder="Explica por qué se rechaza esta valoración..."
+                    placeholder="Explica por quÃ© se rechaza esta valoraciÃ³n..."
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-400 focus:border-transparent outline-none transition-all text-sm resize-none"
                   />
                 </div>
@@ -245,3 +245,4 @@ const ValoracionesPorAprobarPage = () => {
 };
 
 export default ValoracionesPorAprobarPage;
+

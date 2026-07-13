@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Wrench, Calendar, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import valoracionesService, { MiValoracion } from '../services/valoracionesService';
@@ -34,7 +34,7 @@ const MisValoracionesPage = () => {
         setValoraciones(data);
       } catch (err) {
         console.error(err);
-        setError('No fue posible cargar tus valoraciones.');
+        setError('No fue posible cargar tus valoraciones técnicas. Verifica que el backend esté activo y que el módulo de valoraciones no tenga errores.');
       } finally {
         setIsLoading(false);
       }
@@ -68,7 +68,7 @@ const MisValoracionesPage = () => {
       )));
     } catch (err) {
       console.error(err);
-      setError('No fue posible eliminar el material de la valoración.');
+      setError('No fue posible eliminar el material de la valoraciÃ³n.');
     } finally {
       setDeletingMaterial(null);
     }
@@ -100,8 +100,8 @@ const MisValoracionesPage = () => {
 
       {valoraciones.length === 0 ? (
         <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-sm text-center">
-          <h3 className="text-slate-800 font-bold mb-1">Aún no has registrado valoraciones</h3>
-          <p className="text-slate-500 text-sm">Cuando valores un ticket, aparecerá aquí junto con su estado.</p>
+          <h3 className="text-slate-800 font-bold mb-1">AÃºn no has registrado valoraciones</h3>
+          <p className="text-slate-500 text-sm">Cuando valores un ticket, aparecerÃ¡ aquÃ­ junto con su estado.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -208,3 +208,4 @@ const MisValoracionesPage = () => {
 };
 
 export default MisValoracionesPage;
+
