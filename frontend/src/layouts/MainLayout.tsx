@@ -82,7 +82,7 @@ const buildNavItems = (role: Role | null): NavItem[] => [
   { id: 'ajustes', label: 'Ajustes', icon: <Settings size={20} />, path: '/ajustes' },
 ];
 
-// Roles que reportan desperfectos directamente; mantenimiento y subdirección no.
+// Roles que reportan desperfectos directamente; mantenimiento y administración no.
 const ROLES_QUE_REPORTAN: Role[] = [ROLES.RESPONSABLE_DEL_LUGAR, ROLES.USUARIO_REGISTRADO];
 
 const MainLayout = () => {

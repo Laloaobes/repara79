@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
+    protected $appends = [
+        'fotografia_inicial_url',
+    ];
+
     protected $fillable = [
         'usuario_id',
         'area_id',
@@ -57,5 +61,18 @@ class Ticket extends Model
     public function valoracion(): HasOne
     {
         return $this->hasOne(Valoracion::class);
+    }
+
+    public function getFotografiaInicialUrlAttribute(): ?string
+    {
+        if (!$this->fotografia_inicial) {
+            return null;
+        }
+
+        if (str_starts_with($this->fotografia_inicial, 'http://') || str_starts_with($this->fotografia_inicial, 'https://')) {
+            return $this->fotografia_inicial;
+        }
+
+        return url('/storage/'.$this->fotografia_inicial);
     }
 }

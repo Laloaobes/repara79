@@ -51,6 +51,8 @@ export interface Ticket {
   titulo: string;
   descripcion_desperfecto: string;
   ubicacion: string;
+  fotografia_inicial?: string | null;
+  fotografia_inicial_url?: string | null;
   created_at: string;
   area?: AreaTicket | null;
   tipo_desperfecto?: TicketCatalogItem | null;
@@ -81,6 +83,7 @@ export interface CreateTicketPayload {
   descripcion_desperfecto: string;
   ubicacion: string;
   otro_desperfecto?: string;
+  fotografia_inicial?: File | null;
 }
 
 const ticketsService = {
@@ -89,8 +92,10 @@ const ticketsService = {
     return response.data.data;
   },
 
-  async createTicket(data: CreateTicketPayload): Promise<Ticket> {
-    const response = await apiClient.post('/tickets', data);
+  async createTicket(data: CreateTicketPayload | FormData): Promise<Ticket> {
+    const response = await apiClient.post('/tickets', data, data instanceof FormData
+      ? { headers: { 'Content-Type': 'multipart/form-data' } }
+      : undefined);
     return response.data.data;
   },
 

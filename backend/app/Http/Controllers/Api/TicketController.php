@@ -10,6 +10,7 @@ use App\Models\PrioridadTicket;
 use App\Models\Sede;
 use App\Models\Ticket;
 use App\Models\TipoDesperfecto;
+use Illuminate\Support\Arr;
 
 class TicketController extends Controller
 {
@@ -29,6 +30,15 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request)
     {
+        $validated = $request->validated();
+        $ticketData = Arr::except($validated, ['fotografia_inicial']);
+
+        if ($request->hasFile('fotografia_inicial')) {
+            $ticketData['fotografia_inicial'] = $request
+                ->file('fotografia_inicial')
+                ->store('tickets/evidencias', 'public');
+        }
+
         $estadoPendiente = EstadoTicket::firstOrCreate(
             ['nombre' => 'Pendiente'],
             [
@@ -38,7 +48,7 @@ class TicketController extends Controller
         );
 
         $ticket = Ticket::create([
-            ...$request->validated(),
+            ...$ticketData,
             'usuario_id' => auth()->id(),
             'estado_id' => $estadoPendiente->id,
             'fecha_reporte' => now(),
