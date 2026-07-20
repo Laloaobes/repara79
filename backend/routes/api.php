@@ -21,11 +21,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tickets', [TicketController::class, 'store']);
     Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
 
-    // Solo "Personal de Mantenimiento" puede registrar valoraciones y ver las suyas.
+    // Solo "Personal de Mantenimiento" puede registrar valoraciones y cerrar tickets.
     Route::middleware('role:Personal de Mantenimiento')->group(function () {
         Route::post('/valoraciones', [ValoracionController::class, 'store']);
         Route::get('/valoraciones/mis-valoraciones', [ValoracionController::class, 'misValoraciones']);
         Route::delete('/valoraciones/{valoracion}/materiales/{materialIndex}', [ValoracionController::class, 'destroyMaterial']);
+        Route::post('/tickets/{ticket}/marcar-reparado', [TicketController::class, 'marcarReparado']);
     });
 
     // Exclusivo de "Subdirector Administrativo".

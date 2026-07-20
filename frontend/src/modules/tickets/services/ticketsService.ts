@@ -108,6 +108,11 @@ const ticketsService = {
     const response = await apiClient.post('/valoraciones', data);
     return response.data.data;
   },
+
+  async marcarReparado(id: number): Promise<Ticket> {
+    const response = await apiClient.post(`/tickets/${id}/marcar-reparado`);
+    return response.data.data;
+  },
 };
 
 export default ticketsService;

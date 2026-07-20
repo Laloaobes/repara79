@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, UserCircle, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, UserCircle, Plus, Trash2, Hammer } from 'lucide-react';
 import RoleGuard from '../../auth/components/RoleGuard';
 import ticketsService, { Ticket } from '../services/ticketsService';
 import { ROLES } from '../../../constants/roles';
@@ -16,6 +16,7 @@ const TicketDetailPage = () => {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMarkingReparado, setIsMarkingReparado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [materiales, setMateriales] = useState<MaterialRow[]>([]);
@@ -45,6 +46,19 @@ const TicketDetailPage = () => {
     loadTicket();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  const handleMarcarReparado = async () => {
+    if (!ticket) return;
+    setIsMarkingReparado(true);
+    try {
+      await ticketsService.marcarReparado(ticket.id);
+      await loadTicket();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsMarkingReparado(false);
+    }
+  };
 
   const handleCreateValoracion = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -146,6 +160,19 @@ const TicketDetailPage = () => {
               {ticket.tipo_desperfecto?.nombre || 'Sin tipo'}
             </span>
           </div>
+
+          <RoleGuard allowedRoles={[ROLES.PERSONAL_MANTENIMIENTO]}>
+            {ticket.estado?.nombre === 'Autorizado' && (
+              <button
+                onClick={handleMarcarReparado}
+                disabled={isMarkingReparado}
+                className="mt-2 w-full flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold rounded-xl shadow-md transition-colors text-sm"
+              >
+                <Hammer size={16} />
+                {isMarkingReparado ? 'Guardando...' : 'Marcar como Reparado'}
+              </button>
+            )}
+          </RoleGuard>
         </section>
 
         {/* Columna: valoración técnica */}

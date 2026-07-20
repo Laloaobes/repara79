@@ -65,6 +65,39 @@ class TicketController extends Controller
         ]);
     }
 
+    public function marcarReparado(Ticket $ticket)
+    {
+        // Solo Personal de Mantenimiento puede cerrar tickets
+        if (!auth()->user()->hasRole('Personal de Mantenimiento')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permisos para esta acción.',
+            ], 403);
+        }
+
+        // Máquina de estados: solo tickets autorizados pueden marcarse como reparados
+        if ($ticket->estado?->nombre !== 'Autorizado') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo se pueden reparar tickets que ya fueron autorizados por la Subdirección.',
+            ], 422);
+        }
+
+        $estadoReparado = EstadoTicket::firstOrCreate(
+            ['nombre' => 'Reparado'],
+            ['descripcion' => 'El desperfecto fue reparado por el técnico asignado.', 'orden' => 4]
+        );
+
+        $ticket->estado_id = $estadoReparado->id;
+        $ticket->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'El ticket ha sido marcado como reparado exitosamente.',
+            'data' => $ticket->load(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad', 'usuario', 'valoracion.tecnico']),
+        ]);
+    }
+
     public function catalogs()
     {
         return response()->json([
