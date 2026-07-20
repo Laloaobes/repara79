@@ -20,13 +20,14 @@ class UsuarioSubdirectorSeeder extends Seeder
             ],
             [
                 'tipo_usuario_id' => $tipoSubdirectorAdministrativo->id,
-                'name' => 'Administrador',
+                'name' => 'Subdirector Administrativo',
                 'password' => '12345678',
             ]
         );
 
         $user->forceFill([
             'tipo_usuario_id' => $tipoSubdirectorAdministrativo->id,
+            'name' => 'Subdirector Administrativo',
         ])->save();
     }
 }
