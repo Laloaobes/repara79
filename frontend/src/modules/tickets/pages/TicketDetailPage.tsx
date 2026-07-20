@@ -133,6 +133,21 @@ const TicketDetailPage = () => {
             <p className="text-sm text-slate-600 mt-2 leading-relaxed">{ticket.descripcion_desperfecto}</p>
           </div>
 
+          <div className="w-full aspect-video rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+            {ticket.fotografia_inicial_url ? (
+              <img
+                src={ticket.fotografia_inicial_url}
+                alt={`Evidencia fotografica de ${ticket.titulo}`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-slate-300 text-xs font-bold uppercase tracking-widest">
+                <ImageIcon size={28} />
+                Sin evidencia fotografica
+              </div>
+            )}
+          </div>
+
           <div className="flex flex-col gap-2 text-xs font-medium text-slate-500 pt-3 border-t border-slate-100">
             <div className="flex items-center gap-1.5">
               <MapPin size={14} className="text-slate-400" />

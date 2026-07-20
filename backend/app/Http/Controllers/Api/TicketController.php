@@ -10,6 +10,7 @@ use App\Models\PrioridadTicket;
 use App\Models\Sede;
 use App\Models\Ticket;
 use App\Models\TipoDesperfecto;
+use Illuminate\Support\Arr;
 
 class TicketController extends Controller
 {
@@ -17,7 +18,7 @@ class TicketController extends Controller
     {
         $query = Ticket::with(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad']);
 
-        if (!auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo')) {
+        if (!auth()->user()->hasRole('Personal de Mantenimiento', 'Administrador')) {
             $query->where('usuario_id', auth()->id());
         }
 
@@ -29,6 +30,15 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request)
     {
+        $validated = $request->validated();
+        $ticketData = Arr::except($validated, ['fotografia_inicial']);
+
+        if ($request->hasFile('fotografia_inicial')) {
+            $ticketData['fotografia_inicial'] = $request
+                ->file('fotografia_inicial')
+                ->store('tickets/evidencias', 'public');
+        }
+
         $estadoPendiente = EstadoTicket::firstOrCreate(
             ['nombre' => 'Pendiente'],
             [
@@ -38,7 +48,7 @@ class TicketController extends Controller
         );
 
         $ticket = Ticket::create([
-            ...$request->validated(),
+            ...$ticketData,
             'usuario_id' => auth()->id(),
             'estado_id' => $estadoPendiente->id,
             'fecha_reporte' => now(),
@@ -53,7 +63,7 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket)
     {
-        $canViewAnyTicket = auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo');
+        $canViewAnyTicket = auth()->user()->hasRole('Personal de Mantenimiento', 'Administrador');
 
         if (!$canViewAnyTicket && $ticket->usuario_id !== auth()->id()) {
             abort(404);

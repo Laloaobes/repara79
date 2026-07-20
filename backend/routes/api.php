@@ -29,8 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tickets/{ticket}/marcar-reparado', [TicketController::class, 'marcarReparado']);
     });
 
-    // Exclusivo de "Subdirector Administrativo".
-    Route::middleware('role:Subdirector Administrativo')->group(function () {
+    // Exclusivo de "Administrador".
+    Route::middleware('role:Administrador')->group(function () {
         Route::get('/valoraciones/pendientes', [ValoracionController::class, 'pendientes']);
         Route::post('/valoraciones/{valoracion}/autorizar', [ValoracionController::class, 'autorizar']);
         Route::post('/valoraciones/{valoracion}/rechazar', [ValoracionController::class, 'rechazar']);

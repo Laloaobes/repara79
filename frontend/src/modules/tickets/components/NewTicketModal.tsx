@@ -38,16 +38,22 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
     setMessage(null);
 
     const formData = new FormData(e.currentTarget);
+    const fotografiaInicial = formData.get('fotografia_inicial');
+    const payload = new FormData();
+
+    payload.append('titulo', String(formData.get('titulo') || ''));
+    payload.append('ubicacion', String(formData.get('ubicacion') || ''));
+    payload.append('descripcion_desperfecto', String(formData.get('descripcion_desperfecto') || ''));
+    payload.append('area_id', String(formData.get('area_id') || ''));
+    payload.append('tipo_desperfecto_id', String(formData.get('tipo_desperfecto_id') || ''));
+    payload.append('prioridad_id', String(formData.get('prioridad_id') || ''));
+
+    if (fotografiaInicial instanceof File && fotografiaInicial.size > 0) {
+      payload.append('fotografia_inicial', fotografiaInicial);
+    }
 
     try {
-      await ticketsService.createTicket({
-        titulo: String(formData.get('titulo')),
-        ubicacion: String(formData.get('ubicacion')),
-        descripcion_desperfecto: String(formData.get('descripcion_desperfecto')),
-        area_id: Number(formData.get('area_id')),
-        tipo_desperfecto_id: Number(formData.get('tipo_desperfecto_id')),
-        prioridad_id: Number(formData.get('prioridad_id')),
-      });
+      await ticketsService.createTicket(payload);
 
       setMessage('Ticket creado correctamente.');
       onCreated?.();
@@ -172,8 +178,8 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
             <div className="relative border-2 border-dashed border-[#52b788]/30 bg-[#f0fdf4]/50 rounded-2xl p-6 text-center hover:bg-[#f0fdf4] transition-colors group cursor-pointer">
               <input 
                 type="file" 
-                name="evidence"
-                accept="image/png, image/jpeg"
+                name="fotografia_inicial"
+                accept="image/png, image/jpeg, image/webp"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
               />
               <div className="w-10 h-10 mx-auto bg-white rounded-full flex items-center justify-center shadow-sm text-[#52b788] mb-3 group-hover:-translate-y-1 transition-transform">

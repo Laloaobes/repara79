@@ -21,7 +21,7 @@ class UpdateUserRoleRequest extends FormRequest
                 Rule::in([
                     'Responsable del Lugar',
                     'Personal de Mantenimiento',
-                    'Subdirector Administrativo',
+                    'Administrador',
                     'Usuario Registrado',
                 ]),
             ],
