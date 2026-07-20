@@ -37,7 +37,7 @@ interface NavItem {
   roles?: Role[];
 }
 
-const ROLES_ADMIN_TIER: Role[] = [ROLES.ADMINISTRADOR];
+const ROLES_ADMIN_TIER: Role[] = [ROLES.SUBDIRECTOR_ADMINISTRATIVO];
 
 const getDashboardLabel = (role: Role | null) =>
   role && ROLES_ADMIN_TIER.includes(role) ? 'Dashboard General' : 'Dashboard';
