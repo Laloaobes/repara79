@@ -58,7 +58,7 @@ const DashboardPage = () => {
     prioridad: ticket.prioridad?.nombre || 'Sin prioridad',
     area: ticket.area?.nombre || 'Sin area',
     tecnico: 'Sin asignar',
-    bgImg: null,
+    bgImg: (ticket as any).fotografia_inicial_url || null,
   });
 
   const loadTickets = async () => {
@@ -168,17 +168,8 @@ const DashboardPage = () => {
               onClick={() => navigate('/tickets')}
               className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-bold transition-all text-sm backdrop-blur-sm"
             >
-              <ClipboardList size={18} /> {isMantenimiento ? 'Ver tickets pendientes' : 'Ver todos los tickets'}
+              <ClipboardList size={18} /> Ver tickets
             </button>
-
-            {isAdminTier && (
-              <button
-                onClick={() => navigate('/valoraciones-por-aprobar')}
-                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-bold transition-all text-sm backdrop-blur-sm"
-              >
-                <ClipboardCheck size={18} /> Valoraciones por aprobar
-              </button>
-            )}
 
             {isMantenimiento && (
               <button
