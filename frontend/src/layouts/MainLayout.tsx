@@ -37,7 +37,7 @@ interface NavItem {
   roles?: Role[];
 }
 
-const ROLES_ADMIN_TIER: Role[] = [ROLES.SUBDIRECTOR_ADMINISTRATIVO];
+const ROLES_ADMIN_TIER: Role[] = [ROLES.ADMINISTRADOR];
 
 const getDashboardLabel = (role: Role | null) =>
   role && ROLES_ADMIN_TIER.includes(role) ? 'Dashboard General' : 'Dashboard';
@@ -82,7 +82,7 @@ const buildNavItems = (role: Role | null): NavItem[] => [
   { id: 'ajustes', label: 'Ajustes', icon: <Settings size={20} />, path: '/ajustes' },
 ];
 
-// Roles que reportan desperfectos directamente; mantenimiento y subdirección no.
+// Roles que reportan desperfectos directamente; mantenimiento y administración no.
 const ROLES_QUE_REPORTAN: Role[] = [ROLES.RESPONSABLE_DEL_LUGAR, ROLES.USUARIO_REGISTRADO];
 
 const MainLayout = () => {
