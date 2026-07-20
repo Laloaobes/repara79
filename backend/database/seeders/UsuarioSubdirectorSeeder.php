@@ -19,14 +19,14 @@ class UsuarioSubdirectorSeeder extends Seeder
                 'email' => 'admin@repara79.com',
             ],
             [
-                'tipo_usuario_id' => $tipoAdministrador->id,
+                'tipo_usuario_id' => $tipoSubdirector Administrativo->id,
                 'name' => 'Administrador',
                 'password' => '12345678',
             ]
         );
 
         $user->forceFill([
-            'tipo_usuario_id' => $tipoAdministrador->id,
+            'tipo_usuario_id' => $tipoSubdirectorAdministrativo->id,
         ])->save();
     }
 }
