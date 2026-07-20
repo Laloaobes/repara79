@@ -10,8 +10,8 @@ class UsuarioSubdirectorSeeder extends Seeder
 {
     public function run(): void
     {
-        $tipoAdministrador = TipoUsuario::firstOrCreate([
-            'nombre' => 'Administrador',
+        $tipoSubdirectorAdministrativo = TipoUsuario::firstOrCreate([
+            'nombre' => 'Subdirector Administrativo',
         ]);
 
         $user = User::firstOrCreate(
@@ -19,14 +19,15 @@ class UsuarioSubdirectorSeeder extends Seeder
                 'email' => 'admin@repara79.com',
             ],
             [
-                'tipo_usuario_id' => $tipoAdministrador->id,
-                'name' => 'Administrador',
+                'tipo_usuario_id' => $tipoSubdirectorAdministrativo->id,
+                'name' => 'Subdirector Administrativo',
                 'password' => '12345678',
             ]
         );
 
         $user->forceFill([
-            'tipo_usuario_id' => $tipoAdministrador->id,
+            'tipo_usuario_id' => $tipoSubdirectorAdministrativo->id,
+            'name' => 'Subdirector Administrativo',
         ])->save();
     }
 }
