@@ -41,7 +41,7 @@ const DashboardPage = () => {
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
 
   const isMantenimiento = role === ROLES.PERSONAL_MANTENIMIENTO;
-  const isAdminTier = role === ROLES.SUBDIRECTOR_ADMINISTRATIVO;
+  const isAdminTier = role === ROLES.ADMINISTRADOR;
   const puedeReportar = role === ROLES.RESPONSABLE_DEL_LUGAR || role === ROLES.USUARIO_REGISTRADO;
 
   const formatTicket = (ticket: ApiTicket): Ticket => ({
@@ -64,7 +64,7 @@ const DashboardPage = () => {
   const loadTickets = async () => {
     try {
       // El backend ya escala los resultados por rol: propios para Responsable del Lugar,
-      // todos para Personal de Mantenimiento y Subdirector Administrativo.
+      // todos para Personal de Mantenimiento y Administrador.
       const tickets = await ticketsService.getMyTickets();
       const formattedTickets = tickets.map(formatTicket);
 

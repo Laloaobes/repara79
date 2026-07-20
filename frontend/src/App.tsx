@@ -39,8 +39,8 @@ function App() {
                 <Route path="mis-valoraciones" element={<MisValoracionesPage />} />
               </Route>
 
-              {/* Exclusivas de "Subdirector Administrativo" */}
-              <Route element={<ProtectedRoute allowedRoles={[ROLES.SUBDIRECTOR_ADMINISTRATIVO]} />}>
+              {/* Exclusivas de "Administrador" */}
+               <Route element={<ProtectedRoute allowedRoles={[ROLES.ADMINISTRADOR]} />}>
                 <Route path="valoraciones-por-aprobar" element={<ValoracionesPorAprobarPage />} />
                 <Route path="usuarios" element={<GestionUsuariosPage />} />
               </Route>
