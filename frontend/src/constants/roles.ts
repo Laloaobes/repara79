@@ -5,7 +5,7 @@
 export const ROLES = {
   RESPONSABLE_DEL_LUGAR: 'Responsable del Lugar',
   PERSONAL_MANTENIMIENTO: 'Personal de Mantenimiento',
-  ADMINISTRADOR: 'Administrador',
+  SUBDIRECTOR_ADMINISTRATIVO: 'Subdirector Administrativo',
   USUARIO_REGISTRADO: 'Usuario Registrado',
 } as const;
 
