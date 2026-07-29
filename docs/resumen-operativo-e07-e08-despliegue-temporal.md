@@ -146,6 +146,13 @@ Cada material público usa:
 
 La valoración incluye `costo_estimado`.
 
+Semántica definitiva del envío desde la interfaz:
+
+- Pulsar `Crear valoración técnica` después de validar la captura abre una confirmación; no crea todavía la valoración.
+- `Cancelar` cierra la confirmación, conserva todos los datos locales y no invoca la API.
+- `Confirmar` ejecuta una única petición y bloquea reintentos mientras se procesa.
+- Una respuesta exitosa vuelve la valoración inmutable hasta que E07 registre un rechazo con motivo y habilite su corrección.
+
 Decisiones monetarias:
 
 - `descripcion` es alias público de `materiales_ticket.nombre_material`.
@@ -706,4 +713,3 @@ La demo puede publicarse únicamente cuando:
 ## Regla final
 
 El despliegue temporal es una excepción para demostrar uso. Debe ser restringido, trazable, reversible y con datos ficticios. La arquitectura institucional de E15 continúa siendo Ubuntu Server, Nginx, PHP-FPM, PostgreSQL, Supervisor y red local autorizada.
-

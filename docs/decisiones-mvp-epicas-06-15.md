@@ -34,12 +34,14 @@ Este documento conserva las decisiones que deben aplicar las épicas refinadas y
 - El contrato público de salida por material usa `id`, `descripcion`, `cantidad`, `costo_unitario` y `subtotal`.
 - `costo_unitario`, `subtotal` y `costo_estimado` se serializan como cadenas decimales con dos posiciones.
 - Backend calcula subtotales y total; no los recibe como fuente confiable del cliente.
+- Pulsar `Crear valoración técnica` con una captura válida abre una confirmación previa y todavía no invoca la API.
+- La confirmación ofrece `Cancelar` y `Confirmar`: cancelar cierra el mensaje, conserva la captura y no persiste cambios; confirmar ejecuta una única petición de creación.
 - La valoración se crea y envía en una sola operación; no existen borradores persistidos en el MVP.
 - El ticket cambia a `Valorado`.
 - La solicitud de materiales queda `Pendiente de autorización`.
 - La creación de solicitud, materiales y transición del ticket es atómica y resistente a concurrencia.
 - Los estados `Pendiente` y `Valorado` se consultan del catálogo y no se crean durante la operación.
-- Una valoración enviada no se edita ni pierde materiales mientras espera autorización.
+- Tras una respuesta exitosa, una valoración enviada no se edita ni pierde materiales mientras espera autorización; solo un rechazo con motivo gestionado en ÉPICA 07 habilita su corrección.
 - La eliminación de materiales por índice posicional se retira; la corrección por ID tras un rechazo pertenece a ÉPICA 07.
 - `codigo_material`, `inventario_ref`, `estado_individual` y el rechazo individual de materiales quedan fuera del contrato del MVP.
 - El Subdirector Administrativo consulta y decide en ÉPICA 07, no en ÉPICA 06.

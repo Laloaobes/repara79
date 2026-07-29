@@ -11,7 +11,7 @@
 
 ## Objetivo
 
-Permitir que el Personal de Mantenimiento consulte un ticket pendiente, revise el desperfecto, registre observaciones y los materiales estimados con cantidades y costos unitarios reales, y envíe una valoración consistente para revisión administrativa.
+Permitir que el Personal de Mantenimiento consulte un ticket pendiente, revise el desperfecto, registre observaciones y los materiales estimados con cantidades y costos unitarios reales, confirme explícitamente su decisión y envíe una valoración consistente para revisión administrativa.
 
 ## Resultado esperado
 
@@ -22,10 +22,13 @@ Al terminar la épica, el sistema debe cubrir este flujo:
 3. Revisa la información y evidencia inicial registradas en el ticket.
 4. Captura observaciones y al menos un material con descripción, cantidad y costo unitario.
 5. La interfaz muestra subtotales y total estimado como ayuda antes del envío.
-6. Backend valida nuevamente datos, rol, estado, unicidad y cálculos.
-7. En una sola transacción crea `solicitudes_materiales` y `materiales_ticket`, registra al autor, cambia el ticket a `Valorado` y deja la solicitud `Pendiente de autorización`.
-8. El autor puede consultar la valoración enviada, pero no modificarla mientras espera una decisión.
-9. ÉPICA 07 recibe el contrato completo para consultar, autorizar, rechazar o solicitar corrección.
+6. Al pulsar `Crear valoración técnica`, la interfaz valida la captura y muestra un mensaje o tarjeta de confirmación con las acciones `Cancelar` y `Confirmar`.
+7. `Cancelar` cierra la confirmación, conserva íntegra la captura y no realiza ninguna petición de creación.
+8. `Confirmar` realiza un único envío y bloquea nuevas acciones mientras la petición está en curso.
+9. Backend valida nuevamente datos, rol, estado, unicidad y cálculos.
+10. En una sola transacción crea `solicitudes_materiales` y `materiales_ticket`, registra al autor, cambia el ticket a `Valorado` y deja la solicitud `Pendiente de autorización`.
+11. El autor puede consultar la valoración enviada, pero no modificarla mientras espera una decisión.
+12. ÉPICA 07 recibe el contrato completo para consultar, autorizar, rechazar con motivo o habilitar la corrección correspondiente.
 
 ## Alcance esencial
 
@@ -37,6 +40,7 @@ Al terminar la épica, el sistema debe cubrir este flujo:
 - Cantidad entera y costo unitario por material.
 - Cálculo informativo de subtotales y total en frontend.
 - Cálculo oficial de subtotales y total en Backend.
+- Confirmación explícita antes de ejecutar la petición de creación.
 - Registro transaccional de valoración, materiales y transición del ticket.
 - Consulta de valoraciones propias.
 - Control de acceso, estado, unicidad y concurrencia.
@@ -57,7 +61,7 @@ Al terminar la épica, el sistema debe cubrir este flujo:
 - No se implementa `historial_ticket`.
 - No se generan notificaciones, PDF o bitácora en esta épica.
 
-El formulario puede agregar o quitar renglones localmente antes de enviar. Una vez confirmado el registro, la valoración se considera formalmente enviada y permanece inmutable hasta que ÉPICA 07 habilite una corrección por rechazo.
+El formulario puede agregar o quitar renglones localmente antes de enviar. Pulsar `Crear valoración técnica` no envía por sí solo la información: abre la confirmación después de validar la captura. `Cancelar` equivale a desistir del envío y no persiste cambios; `Confirmar` ejecuta la petición de creación. Una vez que Backend confirma el registro, la valoración se considera formalmente enviada y permanece inmutable hasta que ÉPICA 07 habilite una corrección como consecuencia de un rechazo con motivo.
 
 ## Contraste con la implementación actual
 
@@ -71,6 +75,7 @@ El formulario puede agregar o quitar renglones localmente antes de enviar. Una v
 | Estado de la solicitud | Incorrecto | Usar `Pendiente de autorización`, no `Pendiente`. |
 | Estado del ticket | Parcial | Consultar `Valorado` del catálogo y no crearlo durante la operación. |
 | Cálculos monetarios | Parcial | Exponer cantidad, costo unitario, subtotal y total con precisión consistente. |
+| Confirmación de envío | No implementada | El botón actual envía directamente; agregar mensaje o tarjeta con `Cancelar` y `Confirmar`. |
 | Consulta de valoraciones propias | Parcial | Alinear DTO y retirar edición posicional después del envío. |
 | Eliminación de materiales | Incorrecto | Retirar el endpoint basado en índice posicional del flujo enviado. |
 | Concurrencia | No implementado | Garantizar que solo una solicitud valore un ticket. |
@@ -458,6 +463,7 @@ Fullstack Frontend/UX-UI.
   - `frontend/src/modules/tickets/components/valuation/ValuationForm.tsx`
   - `frontend/src/modules/tickets/components/valuation/MaterialRowsEditor.tsx`
   - `frontend/src/modules/tickets/components/valuation/ValuationSummary.tsx`
+  - `frontend/src/modules/tickets/components/valuation/ConfirmValuationDialog.tsx`
 - Servicios y tipos:
   - `frontend/src/modules/tickets/services/ticketsService.ts`
   - `frontend/src/modules/tickets/services/valoracionesService.ts`
@@ -499,7 +505,7 @@ Consume del servidor ID, estado, autor, fechas, subtotales y total. No envía ca
 2. **Separar formulario de valoración** — Extraer la captura actual del detalle y mostrarla solo para Personal de Mantenimiento cuando el ticket esté `Pendiente` y no tenga valoración.
 3. **Capturar materiales completos** — Permitir agregar, editar y quitar renglones locales con descripción, cantidad y costo unitario, conservando al menos uno.
 4. **Mostrar resumen estimado** — Calcular subtotales y total como ayuda visual con formato MXN y aclarar que Backend confirma el importe oficial.
-5. **Validar y confirmar envío** — Validar observaciones, materiales y límites; solicitar confirmación, impedir doble envío y usar el DTO definitivo.
+5. **Validar y confirmar envío** — Validar observaciones, materiales y límites antes de abrir un mensaje o tarjeta accesible que advierta que la valoración enviada quedará sin edición hasta un rechazo con motivo. Incluir `Cancelar`, que cierre el mensaje sin invocar la API y conserve el formulario, y `Confirmar`, que ejecute una sola petición con el DTO definitivo.
 6. **Procesar respuesta y errores** — Reflejar el estado `Valorado`, limpiar el formulario solo tras éxito y conservar la captura ante errores recuperables.
 7. **Alinear valoraciones propias** — Mostrar materiales con cantidad, costo unitario, subtotal y total sin habilitar eliminación o edición mientras están pendientes.
 8. **Mejorar accesibilidad y respuesta visual** — Garantizar etiquetas, teclado, foco, mensajes comprensibles y uso en móvil y escritorio.
@@ -516,20 +522,24 @@ Consume del servidor ID, estado, autor, fechas, subtotales y total. No envía ca
 8. El usuario puede agregar o quitar renglones antes del envío sin persistir operaciones parciales.
 9. Cada subtotal usa cantidad por costo unitario y el total visible suma todos los subtotales.
 10. El payload no incluye subtotales, total, estado, autor o fecha.
-11. La confirmación bloquea dobles envíos mientras la petición está en curso.
-12. Un éxito muestra el ticket `Valorado` y la valoración `Pendiente de autorización`.
-13. Un error `422` conserva los datos capturados y muestra campos o reglas que deben corregirse.
-14. Mis Valoraciones muestra ID, descripción, cantidad, costo unitario, subtotal y total del servidor.
-15. No existe acción para eliminar materiales de una valoración enviada.
-16. El recorrido es utilizable mediante teclado y en resoluciones móviles y de escritorio.
+11. Pulsar `Crear valoración técnica` con una captura válida abre el mensaje o tarjeta de confirmación y todavía no invoca el endpoint de creación.
+12. La confirmación comunica que, después de un envío exitoso, la valoración no podrá modificarse hasta que el Subdirector Administrativo la rechace con motivo mediante E07.
+13. Elegir `Cancelar` cierra la confirmación, no crea ni modifica registros y conserva observaciones, materiales y resumen para realizar correcciones.
+14. Elegir `Confirmar` cierra o actualiza la confirmación, ejecuta exactamente una petición y deshabilita las acciones mientras esta se procesa.
+15. Un éxito muestra el ticket `Valorado` y la valoración `Pendiente de autorización`.
+16. Un error `422` conserva los datos capturados y muestra campos o reglas que deben corregirse.
+17. Mis Valoraciones muestra ID, descripción, cantidad, costo unitario, subtotal y total del servidor.
+18. No existe acción para eliminar materiales de una valoración enviada.
+19. El mensaje de confirmación administra el foco, puede operarse con teclado y el recorrido funciona en resoluciones móviles y de escritorio.
 
 ## Definition of Done
 
 1. **Dado que** Personal de Mantenimiento consulta la bandeja de pendientes, **cuando** busque, filtre u ordene, **entonces** podrá localizar y abrir un ticket elegible sin visualizar acciones administrativas.
 2. **Dado que** el ticket está `Pendiente` y no tiene valoración, **cuando** el usuario capture observaciones y materiales válidos, **entonces** verá subtotales y total estimado antes de confirmar el envío.
-3. **Dado que** el usuario confirma una valoración válida, **cuando** Backend responda correctamente, **entonces** la interfaz mostrará el ticket `Valorado`, la solicitud `Pendiente de autorización` y bloqueará un segundo registro.
-4. **Dado que** Backend rechaza la petición por validación, estado o concurrencia, **cuando** la interfaz procese el error, **entonces** conservará la captura recuperable, habilitará nuevamente el formulario y comunicará la causa.
-5. **Dado que** una valoración ya fue enviada, **cuando** su autor la consulte, **entonces** verá cantidades, costos, subtotales y total sin controles de edición o eliminación.
+3. **Dado que** la captura es válida, **cuando** el usuario pulse `Crear valoración técnica` y después elija `Cancelar`, **entonces** el mensaje se cerrará, no se invocará la API y el formulario conservará todos sus datos.
+4. **Dado que** la captura es válida y la confirmación está abierta, **cuando** el usuario elija `Confirmar`, **entonces** se realizará una sola petición y, si Backend responde correctamente, la interfaz mostrará el ticket `Valorado`, la solicitud `Pendiente de autorización` y bloqueará un segundo registro.
+5. **Dado que** Backend rechaza la petición por validación, estado o concurrencia, **cuando** la interfaz procese el error, **entonces** conservará la captura recuperable, habilitará nuevamente el formulario y comunicará la causa.
+6. **Dado que** una valoración ya fue enviada, **cuando** su autor la consulte, **entonces** verá cantidades, costos, subtotales y total sin controles de edición o eliminación hasta que E07 registre un rechazo con motivo.
 
 ## Reglas de negocio
 
@@ -537,6 +547,8 @@ Consume del servidor ID, estado, autor, fechas, subtotales y total. No envía ca
 - El formulario no aparece para tickets no pendientes o ya valorados.
 - Debe permanecer al menos un renglón válido antes del envío.
 - Los renglones se modifican localmente hasta confirmar.
+- La petición de creación solo se ejecuta desde la acción `Confirmar`; abrir o cancelar el mensaje no produce efectos persistentes.
+- `Cancelar` no limpia el formulario ni altera sus cálculos.
 - Los subtotales y el total frontend son informativos.
 - El servidor es la fuente oficial de estado e importes.
 - El formulario se limpia únicamente después de una respuesta exitosa.
@@ -607,7 +619,7 @@ Las pruebas deben verificar directamente la ausencia de solicitudes, materiales 
 
 1. **Preparar matriz y datos** — Relacionar criterios con casos, roles, tickets, materiales, decimales, resultados esperados y evidencia.
 2. **Verificar API automatizada** — Revisar permisos, validaciones, estados, cálculos, concurrencia, catálogos faltantes, rollback y alcance de valoraciones propias.
-3. **Ejecutar recorrido funcional** — Probar bandeja, detalle, captura dinámica, resumen, confirmación, éxito, errores y consulta posterior.
+3. **Ejecutar recorrido funcional** — Probar bandeja, detalle, captura dinámica, resumen, apertura de la confirmación, cancelación sin efectos, confirmación con envío único, éxito, errores y consulta posterior.
 4. **Validar precisión y contrato** — Comparar manualmente cantidades, costos, subtotales, total y serialización decimal contra la respuesta Backend.
 5. **Ejecutar seguridad y regresión** — Probar los cuatro roles, estados no elegibles, acceso indebido, E05 y disponibilidad de datos para E07.
 6. **Emitir dictamen** — Consolidar resultados, comandos, evidencia, defectos, riesgos aceptados y condición final de la épica.
@@ -626,11 +638,12 @@ Las pruebas deben verificar directamente la ausencia de solicitudes, materiales 
 10. Dos solicitudes concurrentes crean como máximo una valoración.
 11. Un fallo provocado no deja cambios parciales.
 12. El endpoint posicional de eliminación no permanece disponible para valoraciones enviadas.
-13. La interfaz conserva la captura ante errores recuperables e impide doble envío.
-14. La visualización funciona en móvil, escritorio y navegación por teclado.
-15. La regresión de creación y consulta de tickets termina correctamente.
-16. E07 puede consultar una solicitud `Pendiente de autorización` con materiales completos.
-17. No permanecen defectos críticos o altos abiertos para aprobar.
+13. Abrir la confirmación no invoca la API y cancelarla conserva íntegramente la captura sin cambios persistidos.
+14. Confirmar invoca una sola vez la API, conserva la captura ante errores recuperables e impide doble envío.
+15. El mensaje de confirmación y el resto de la visualización funcionan en móvil, escritorio y navegación por teclado.
+16. La regresión de creación y consulta de tickets termina correctamente.
+17. E07 puede consultar una solicitud `Pendiente de autorización` con materiales completos.
+18. No permanecen defectos críticos o altos abiertos para aprobar.
 
 ## Definition of Done
 
@@ -662,13 +675,13 @@ Las pruebas deben verificar directamente la ausencia de solicitudes, materiales 
 
 ## Definition of Done de la Épica
 
-1. **Dado que** existe un ticket `Pendiente` sin valoración, **cuando** Personal de Mantenimiento registre observaciones y materiales válidos, **entonces** el ticket quedará `Valorado` y existirá una solicitud `Pendiente de autorización` con su autor, fecha y materiales completos.
+1. **Dado que** existe un ticket `Pendiente` sin valoración, **cuando** Personal de Mantenimiento registre observaciones y materiales válidos, pulse `Crear valoración técnica` y confirme explícitamente el envío, **entonces** el ticket quedará `Valorado` y existirá una solicitud `Pendiente de autorización` con su autor, fecha y materiales completos.
 2. **Dado que** cada material tiene cantidad y costo unitario, **cuando** el sistema calcule la valoración, **entonces** subtotales y total coincidirán con la suma decimal calculada por Backend y se mostrarán correctamente en Frontend.
 3. **Dado que** un usuario, estado, payload o reintento no cumple las reglas, **cuando** intente registrar la valoración, **entonces** Backend impedirá la operación sin dejar solicitudes, materiales o estados parciales.
 4. **Dado que** la valoración fue enviada, **cuando** su autor la consulte, **entonces** verá el contrato completo y no podrá modificarla hasta un rechazo administrado por E07.
 5. **Dado que** todas las HU están integradas, **cuando** QA ejecute aceptación, concurrencia, regresión, lint y build, **entonces** no existirán defectos críticos o altos abiertos y quedará evidencia reproducible.
+6. **Dado que** la confirmación previa está abierta, **cuando** Personal de Mantenimiento elija `Cancelar`, **entonces** no se enviará ni persistirá la valoración y podrá corregir la captura conservada.
 
 ## Criterio de cierre
 
 ÉPICA 06 se considera terminada cuando HU01 a HU04 cumplen su Definition of Done y ÉPICA 07 puede consultar una valoración `Pendiente de autorización` con ticket `Valorado`, observaciones, autor, materiales con cantidades y costos unitarios, subtotales y total, sin requerir correcciones adicionales al contrato.
-
