@@ -221,13 +221,16 @@ notifications + REST + Reverb
 - El ticket parte de `Pendiente`.
 - Personal de Mantenimiento consulta e inspecciona el ticket.
 - Registra observaciones y al menos un material.
-- Al enviar:
+- Pulsar `Crear valoración técnica` con datos válidos abre una confirmación y aún no invoca la API.
+- `Cancelar` cierra la confirmación, conserva la captura para corregirla y no persiste cambios.
+- `Confirmar` ejecuta un único envío; tras una respuesta exitosa:
   - el ticket cambia a `Valorado`;
   - `solicitudes_materiales.estado_general` queda `Pendiente de autorización`.
+- La valoración enviada queda sin edición hasta que E07 registre un rechazo con motivo.
 - El material debe manejar una cantidad y un costo unitario reales.
 - El contrato actual del código todavía usa `descripcion` y `costo`, fija cantidad en uno y requiere corrección.
 - La tabla física utiliza `nombre_material`, `cantidad` y `costo_unitario`.
-- Debe definirse explícitamente si el DTO público conserva `descripcion` como alias de `nombre_material`.
+- El DTO público conserva `descripcion` como alias de `nombre_material`.
 
 ### ÉPICA 07 — Autorización administrativa
 
