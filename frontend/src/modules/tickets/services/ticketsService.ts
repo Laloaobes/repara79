@@ -36,7 +36,13 @@ export interface Valoracion {
   estado: string;
   observaciones: string;
   motivo_rechazo?: string | null;
+  veces_revisada?: number;
+  valorado_por?: number;
+  validado_por?: number | null;
+  fecha_creacion?: string | null;
+  fecha_validacion?: string | null;
   tecnico?: ValoracionTecnico | null;
+  revisado_por?: ValoracionTecnico | null;
   created_at: string;
 }
 

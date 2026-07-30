@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Wrench, Calendar } from 'lucide-react';
+import EditRejectedValoracionModal from '../components/valuation/EditRejectedValoracionModal';
 import valoracionesService, { MiValoracion } from '../services/valoracionesService';
 import { formatCurrency } from '../../../utils/currency';
 
@@ -24,7 +25,8 @@ const MisValoracionesPage = () => {
   const [valoraciones, setValoraciones] = useState<MiValoracion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<MiValoracion | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const loadValoraciones = async () => {
@@ -41,18 +43,6 @@ const MisValoracionesPage = () => {
 
     loadValoraciones();
   }, []);
-
-  const toggleMotivo = (id: number) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
 
   if (isLoading) {
     return (
@@ -77,6 +67,11 @@ const MisValoracionesPage = () => {
           {error}
         </p>
       )}
+      {success && (
+        <p role="status" className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+          {success}
+        </p>
+      )}
 
       {valoraciones.length === 0 ? (
         <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-sm text-center">
@@ -86,8 +81,6 @@ const MisValoracionesPage = () => {
       ) : (
         <div className="flex flex-col gap-3">
           {valoraciones.map((valoracion) => {
-            const isExpanded = expandedIds.has(valoracion.id);
-
             return (
               <div
                 key={valoracion.id}
@@ -124,20 +117,25 @@ const MisValoracionesPage = () => {
                 </div>
 
                 {valoracion.estado === 'Rechazada' && valoracion.motivo_rechazo && (
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleMotivo(valoracion.id)}
-                      className="flex items-center gap-1 text-xs font-bold text-red-600 hover:underline"
-                    >
-                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      {isExpanded ? 'Ocultar motivo de rechazo' : 'Ver motivo de rechazo'}
-                    </button>
-                    {isExpanded && (
-                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                    <div className="flex-1">
+                      <p className="text-[0.7rem] font-bold uppercase tracking-wide text-red-700 mb-1">
+                        Motivo de rechazo
+                      </p>
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
                         {valoracion.motivo_rechazo}
                       </p>
-                    )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelected(valoracion);
+                        setSuccess(null);
+                      }}
+                      className="shrink-0 px-4 py-3 bg-[#163d2a] text-white rounded-xl text-xs font-bold"
+                    >
+                      Corregir y reenviar
+                    </button>
                   </div>
                 )}
 
@@ -173,6 +171,20 @@ const MisValoracionesPage = () => {
           })}
         </div>
       )}
+
+      <EditRejectedValoracionModal
+        open={selected !== null}
+        valoracion={selected}
+        onClose={() => setSelected(null)}
+        onSuccess={(updated) => {
+          setValoraciones((current) => current.map((item) => (
+            item.id === updated.id ? updated : item
+          )));
+          setSelected(null);
+          setError(null);
+          setSuccess('La valoración corregida fue reenviada para autorización.');
+        }}
+      />
     </div>
   );
 };

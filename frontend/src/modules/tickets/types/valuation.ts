@@ -19,8 +19,19 @@ export interface PendingValuationTicketFilters {
 }
 
 export interface MaterialRowDraft {
+  id?: number;
   localId: string;
   descripcion: string;
   cantidad: string;
   costo_unitario: string;
+}
+
+export interface MaterialResubmissionInput extends MaterialInput {
+  id?: number;
+}
+
+export interface ValoracionPendienteFilters {
+  search?: string;
+  area_id?: number;
+  sort?: 'fecha_desc' | 'fecha_asc' | 'costo_desc' | 'costo_asc';
 }
