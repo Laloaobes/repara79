@@ -3,6 +3,8 @@ import React, { useEffect, useRef } from 'react';
 interface ConfirmValuationDialogProps {
   open: boolean;
   isSubmitting: boolean;
+  title?: string;
+  description?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -10,6 +12,8 @@ interface ConfirmValuationDialogProps {
 const ConfirmValuationDialog = ({
   open,
   isSubmitting,
+  title = 'Confirmar valoración técnica',
+  description = 'Al confirmar, la valoración quedará enviada y no podrá modificarse hasta que el Subdirector Administrativo la rechace con un motivo.',
   onCancel,
   onConfirm,
 }: ConfirmValuationDialogProps) => {
@@ -57,11 +61,10 @@ const ConfirmValuationDialog = ({
         className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
       >
         <h2 id="confirmar-valoracion-titulo" className="text-lg font-bold text-slate-900">
-          Confirmar valoración técnica
+          {title}
         </h2>
         <p id="confirmar-valoracion-descripcion" className="mt-3 text-sm leading-relaxed text-slate-600">
-          Al confirmar, la valoración quedará enviada y no podrá modificarse hasta que el
-          Subdirector Administrativo la rechace con un motivo.
+          {description}
         </p>
         <div className="mt-6 flex gap-3">
           <button

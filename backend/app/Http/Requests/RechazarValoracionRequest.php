@@ -17,4 +17,13 @@ class RechazarValoracionRequest extends FormRequest
             'motivo_rechazo' => ['required', 'string', 'max:500'],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'motivo_rechazo' => is_string($this->input('motivo_rechazo'))
+                ? trim($this->input('motivo_rechazo'))
+                : $this->input('motivo_rechazo'),
+        ]);
+    }
 }

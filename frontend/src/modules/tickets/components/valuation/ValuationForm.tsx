@@ -11,7 +11,7 @@ interface ValuationFormProps {
   onSuccess: () => Promise<void> | void;
 }
 
-const validateRows = (rows: MaterialRowDraft[]): string | null => {
+export const validateMaterialRows = (rows: MaterialRowDraft[]): string | null => {
   if (rows.length < 1 || rows.length > 50) {
     return 'La valoración debe contener entre 1 y 50 materiales.';
   }
@@ -64,7 +64,7 @@ const ValuationForm = ({ ticketId, onSuccess }: ValuationFormProps) => {
       return;
     }
 
-    const rowsError = validateRows(rows);
+    const rowsError = validateMaterialRows(rows);
     if (rowsError) {
       setError(rowsError);
       return;
