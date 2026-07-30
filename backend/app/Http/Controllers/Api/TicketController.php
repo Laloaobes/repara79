@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexPendingValuationTicketsRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Models\Area;
 use App\Models\EstadoTicket;
@@ -14,17 +15,50 @@ use Illuminate\Support\Arr;
 
 class TicketController extends Controller
 {
-    public function index()
+    public function index(IndexPendingValuationTicketsRequest $request)
     {
         $query = Ticket::with(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad']);
 
-        if (!auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo')) {
+        if (! auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo')) {
             $query->where('usuario_id', auth()->id());
         }
 
+        $filters = $request->validated();
+
+        if (! empty($filters['estado'])) {
+            $query->whereHas('estado', fn ($stateQuery) => $stateQuery
+                ->where('nombre', $filters['estado']));
+        }
+
+        if (! empty($filters['area_id'])) {
+            $query->where('area_id', $filters['area_id']);
+        }
+
+        if (! empty($filters['search'])) {
+            $search = trim($filters['search']);
+            $folioId = null;
+
+            if (preg_match('/^(?:TK-)?0*(\d+)$/i', $search, $matches)) {
+                $folioId = (int) $matches[1];
+            }
+
+            $query->where(function ($ticketQuery) use ($search, $folioId) {
+                $ticketQuery->whereLike('titulo', "%{$search}%");
+
+                if ($folioId !== null) {
+                    $ticketQuery->orWhere('id', $folioId);
+                }
+            });
+        }
+
+        $query->orderBy(
+            'created_at',
+            ($filters['sort'] ?? 'fecha_desc') === 'fecha_asc' ? 'asc' : 'desc'
+        );
+
         return response()->json([
             'success' => true,
-            'data' => $query->latest()->get(),
+            'data' => $query->get(),
         ]);
     }
 
@@ -65,13 +99,20 @@ class TicketController extends Controller
     {
         $canViewAnyTicket = auth()->user()->hasRole('Personal de Mantenimiento', 'Subdirector Administrativo');
 
-        if (!$canViewAnyTicket && $ticket->usuario_id !== auth()->id()) {
+        if (! $canViewAnyTicket && $ticket->usuario_id !== auth()->id()) {
             abort(404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $ticket->load(['area.sede', 'tipoDesperfecto', 'estado', 'prioridad', 'usuario', 'valoracion.tecnico']),
+            'data' => $ticket->load([
+                'area.sede',
+                'tipoDesperfecto',
+                'estado',
+                'prioridad',
+                'usuario',
+                'valoracion.tecnico',
+            ]),
         ]);
     }
 

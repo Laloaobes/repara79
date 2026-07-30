@@ -2,7 +2,7 @@
 
 ## Identificación
 
-- **Estado real:** Parcialmente implementada; el flujo básico existe, pero requiere corregir contrato, validaciones, estados, concurrencia, materiales, interfaz y pruebas.
+- **Estado real:** Terminada en `feature/afinacion-valoracion-tecnica`; contrato, Backend, Frontend, migración y pruebas integrados.
 - **Prioridad:** Muy alta.
 - **Actor funcional principal:** Personal de Mantenimiento.
 - **Dependencia principal:** ÉPICA 05 debe entregar tickets registrados en estado `Pendiente`.
@@ -63,41 +63,30 @@ Al terminar la épica, el sistema debe cubrir este flujo:
 
 El formulario puede agregar o quitar renglones localmente antes de enviar. Pulsar `Crear valoración técnica` no envía por sí solo la información: abre la confirmación después de validar la captura. `Cancelar` equivale a desistir del envío y no persiste cambios; `Confirmar` ejecuta la petición de creación. Una vez que Backend confirma el registro, la valoración se considera formalmente enviada y permanece inmutable hasta que ÉPICA 07 habilite una corrección como consecuencia de un rechazo con motivo.
 
-## Contraste con la implementación actual
+## Estado de implementación al cierre
 
-| Capacidad | Estado actual | Pendiente principal |
-| :-- | :-- | :-- |
-| Consulta general de tickets | Parcial | Aplicar consulta operativa de pendientes, búsqueda, área y orden. |
-| Consulta del detalle | Parcial | Restringir la acción de valorar por rol, estado y ausencia de valoración. |
-| Registro de valoración | Parcial | Validar estado, material obligatorio, concurrencia y contrato definitivo. |
-| Cantidad de materiales | Incorrecto | Recibir y persistir la cantidad real en lugar de fijar `1`. |
-| Costo unitario | Inconsistente | Sustituir el campo público `costo` por `costo_unitario`. |
-| Estado de la solicitud | Incorrecto | Usar `Pendiente de autorización`, no `Pendiente`. |
-| Estado del ticket | Parcial | Consultar `Valorado` del catálogo y no crearlo durante la operación. |
-| Cálculos monetarios | Parcial | Exponer cantidad, costo unitario, subtotal y total con precisión consistente. |
-| Confirmación de envío | No implementada | El botón actual envía directamente; agregar mensaje o tarjeta con `Cancelar` y `Confirmar`. |
-| Consulta de valoraciones propias | Parcial | Alinear DTO y retirar edición posicional después del envío. |
-| Eliminación de materiales | Incorrecto | Retirar el endpoint basado en índice posicional del flujo enviado. |
-| Concurrencia | No implementado | Garantizar que solo una solicitud valore un ticket. |
-| Pruebas específicas | No implementado | Agregar pruebas backend y validación funcional. |
+| Capacidad | Estado |
+| :-- | :-- |
+| Contrato técnico y ejemplos | Implementado en `docs/epica-06-contrato-valoracion.md` |
+| Tickets pendientes, búsqueda, área y orden | Implementado en servidor y bandeja protegida |
+| Consulta del detalle | Implementada con control de alcance |
+| Registro de valoración | Implementado mediante servicio transaccional |
+| Cantidad y costo unitario | Implementados con validación y persistencia real |
+| Estado de la solicitud | `Pendiente de autorización` |
+| Estado del ticket | Consulta `Valorado` del catálogo sembrado |
+| Cálculos monetarios | Subtotales y total del servidor con dos decimales |
+| Confirmación de envío | Implementada con `Cancelar` y `Confirmar` |
+| Valoraciones propias | DTO definitivo y solo lectura |
+| Eliminación posicional | Ruta y controles retirados |
+| Concurrencia | Bloqueo de ticket, restricción única y conflicto controlado |
+| Datos heredados | Normalización auditable aplicada |
+| Pruebas específicas | 9 pruebas y 67 aserciones E06 |
 
-### Evidencia técnica del contraste
+Evidencia reproducible:
 
-- Existe `POST /api/valoraciones` bajo el rol `Personal de Mantenimiento`.
-- Existe `GET /api/valoraciones/mis-valoraciones`.
-- `TicketController::index()` ya permite que Personal de Mantenimiento consulte todos los tickets, pero no procesa filtros del servidor.
-- `TicketController::show()` ya carga ticket, catálogos, usuario y valoración.
-- `StoreValoracionRequest.php` permite omitir materiales y solo recibe `descripcion` y `costo`.
-- `ValoracionController::store()` no valida que el ticket esté `Pendiente`.
-- La verificación previa de existencia ocurre fuera de una sección con bloqueo concurrente.
-- El controlador fija `cantidad = 1`, escribe `estado_general = Pendiente` y usa `firstOrCreate()` para `Valorado`.
-- `Valoracion.php` calcula el total con cantidad por costo unitario, pero serializa materiales sin ID ni cantidad.
-- `DELETE /api/valoraciones/{valoracion}/materiales/{materialIndex}` usa la posición de la colección como identidad.
-- `TicketDetailPage.tsx` marca los materiales como opcionales y no captura cantidad.
-- `MisValoracionesPage.tsx` permite eliminar materiales de una valoración `Pendiente`, aunque una valoración enviada debe permanecer sin cambios hasta la decisión administrativa.
-- `materiales_ticket` ya contiene `cantidad` y `costo_unitario`; no se requieren columnas nuevas para el contrato base.
-- La restricción única de `solicitudes_materiales.ticket_id` ya representa una valoración por ticket.
-- No existen pruebas específicas de valoración en Backend o Frontend.
+- `docs/qa/epica-06-plan-validacion.md`
+- `docs/qa/epica-06-evidencias.md`
+- `backend/tests/Feature/Valoracion/ValoracionFlowTest.php`
 
 ## Contrato oficial de materiales
 

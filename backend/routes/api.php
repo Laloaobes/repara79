@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ValoracionController;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -25,7 +25,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:Personal de Mantenimiento')->group(function () {
         Route::post('/valoraciones', [ValoracionController::class, 'store']);
         Route::get('/valoraciones/mis-valoraciones', [ValoracionController::class, 'misValoraciones']);
-        Route::delete('/valoraciones/{valoracion}/materiales/{materialIndex}', [ValoracionController::class, 'destroyMaterial']);
     });
 
     // Exclusivo de "Subdirector Administrativo".

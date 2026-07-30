@@ -151,13 +151,16 @@ const ValoracionesPorAprobarPage = () => {
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-900 mb-2">Materiales y costos</h3>
                   <div className="border border-slate-200 rounded-xl overflow-hidden">
-                    {selected.materiales.map((material, index) => (
+                    {selected.materiales.map((material) => (
                       <div
-                        key={`${material.descripcion}-${index}`}
-                        className="flex items-center justify-between px-4 py-2.5 text-sm border-b border-slate-100 last:border-b-0"
+                        key={material.id}
+                        className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 px-4 py-2.5 text-sm border-b border-slate-100 last:border-b-0"
                       >
                         <span className="text-slate-700">{material.descripcion}</span>
-                        <span className="font-bold text-slate-800">{formatCurrency(material.costo)}</span>
+                        <span className="font-bold text-slate-800">{formatCurrency(material.subtotal)}</span>
+                        <span className="text-[0.7rem] text-slate-500">
+                          {material.cantidad} × {formatCurrency(material.costo_unitario)}
+                        </span>
                       </div>
                     ))}
                     <div className="flex items-center justify-between px-4 py-3 bg-slate-50 text-sm">

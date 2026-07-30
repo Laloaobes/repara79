@@ -1,4 +1,9 @@
 import apiClient from '../../../api/axios';
+import {
+  MaterialInput,
+  MaterialItem,
+  PendingValuationTicketFilters,
+} from '../types/valuation';
 
 export interface TicketCatalogItem {
   id: number;
@@ -21,11 +26,6 @@ export interface AreaTicket extends TicketCatalogItem {
 export interface ValoracionTecnico {
   id: number;
   name: string;
-}
-
-export interface MaterialItem {
-  descripcion: string;
-  costo: number;
 }
 
 export interface Valoracion {
@@ -64,8 +64,8 @@ export interface Ticket {
 
 export interface CreateValoracionPayload {
   ticket_id: number;
-  materiales?: MaterialItem[];
   observaciones: string;
+  materiales: MaterialInput[];
 }
 
 export interface TicketCatalogs {
@@ -96,6 +96,18 @@ const ticketsService = {
     const response = await apiClient.post('/tickets', data, data instanceof FormData
       ? { headers: { 'Content-Type': 'multipart/form-data' } }
       : undefined);
+    return response.data.data;
+  },
+
+  async getPendingValuationTickets(filters: PendingValuationTicketFilters = {}): Promise<Ticket[]> {
+    const response = await apiClient.get('/tickets', {
+      params: {
+        estado: 'Pendiente',
+        search: filters.search || undefined,
+        area_id: filters.area_id || undefined,
+        sort: filters.sort || 'fecha_desc',
+      },
+    });
     return response.data.data;
   },
 

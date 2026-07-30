@@ -7,6 +7,7 @@ import DashboardPage from './modules/dashboard/pages/DashboardPage';
 import TicketsPage from './modules/tickets/pages/TicketsPage';
 import TicketDetailPage from './modules/tickets/pages/TicketDetailPage';
 import MisValoracionesPage from './modules/tickets/pages/MisValoracionesPage';
+import PendingValuationTicketsPage from './modules/tickets/pages/PendingValuationTicketsPage';
 import ValoracionesPorAprobarPage from './modules/tickets/pages/ValoracionesPorAprobarPage';
 import GestionUsuariosPage from './modules/users/pages/GestionUsuariosPage';
 import AjustesPage from './modules/settings/pages/AjustesPage';
@@ -36,6 +37,7 @@ function App() {
 
               {/* Exclusivas de "Personal de Mantenimiento" */}
               <Route element={<ProtectedRoute allowedRoles={[ROLES.PERSONAL_MANTENIMIENTO]} />}>
+                <Route path="tickets-por-valorar" element={<PendingValuationTicketsPage />} />
                 <Route path="mis-valoraciones" element={<MisValoracionesPage />} />
               </Route>
 
