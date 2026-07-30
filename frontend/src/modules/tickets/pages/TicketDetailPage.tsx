@@ -1,31 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, UserCircle, Plus, Trash2, ImageIcon } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, UserCircle, ImageIcon } from 'lucide-react';
 import RoleGuard from '../../auth/components/RoleGuard';
 import ticketsService, { Ticket } from '../services/ticketsService';
 import { ROLES } from '../../../constants/roles';
 import { formatCurrency } from '../../../utils/currency';
-
-interface MaterialRow {
-  descripcion: string;
-  costo: string;
-}
+import ValuationForm from '../components/valuation/ValuationForm';
 
 const TicketDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [materiales, setMateriales] = useState<MaterialRow[]>([]);
-
-  const addMaterial = () => setMateriales((prev) => [...prev, { descripcion: '', costo: '' }]);
-  const removeMaterial = (index: number) => setMateriales((prev) => prev.filter((_, i) => i !== index));
-  const updateMaterial = (index: number, field: keyof MaterialRow, value: string) =>
-    setMateriales((prev) => prev.map((m, i) => (i === index ? { ...m, [field]: value } : m)));
-
-  const totalMateriales = materiales.reduce((sum, m) => sum + (Number(m.costo) || 0), 0);
 
   const loadTicket = async () => {
     if (!id) return;
@@ -33,6 +19,7 @@ const TicketDetailPage = () => {
     try {
       const data = await ticketsService.getTicketById(Number(id));
       setTicket(data);
+      setNotFound(false);
     } catch (err) {
       console.error(err);
       setNotFound(true);
@@ -45,36 +32,6 @@ const TicketDetailPage = () => {
     loadTicket();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  const handleCreateValoracion = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!ticket) return;
-
-    setIsSubmitting(true);
-    setError(null);
-
-    const formData = new FormData(e.currentTarget);
-
-    const materialesPayload = materiales
-      .filter((m) => m.descripcion.trim() !== '')
-      .map((m) => ({ descripcion: m.descripcion.trim(), costo: Number(m.costo) || 0 }));
-
-    try {
-      await ticketsService.createValoracion({
-        ticket_id: ticket.id,
-        materiales: materialesPayload.length > 0 ? materialesPayload : undefined,
-        observaciones: String(formData.get('observaciones') || ''),
-      });
-
-      setMateriales([]);
-      await loadTicket();
-    } catch (err) {
-      console.error(err);
-      setError('No fue posible registrar la valoración. Revisa los datos e intenta de nuevo.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -178,13 +135,16 @@ const TicketDetailPage = () => {
 
               {ticket.valoracion.materiales && ticket.valoracion.materiales.length > 0 && (
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
-                  {ticket.valoracion.materiales.map((material, index) => (
+                  {ticket.valoracion.materiales.map((material) => (
                     <div
-                      key={`${material.descripcion}-${index}`}
-                      className="flex items-center justify-between px-4 py-2 text-sm border-b border-slate-100 last:border-b-0"
+                      key={material.id}
+                      className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 px-4 py-2 text-sm border-b border-slate-100 last:border-b-0"
                     >
                       <span className="text-slate-700">{material.descripcion}</span>
-                      <span className="font-bold text-slate-800">{formatCurrency(material.costo)}</span>
+                      <span className="font-bold text-slate-800">{formatCurrency(material.subtotal)}</span>
+                      <span className="text-[0.7rem] text-slate-500">
+                        {material.cantidad} × {formatCurrency(material.costo_unitario)}
+                      </span>
                     </div>
                   ))}
                   <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 text-sm">
@@ -203,6 +163,11 @@ const TicketDetailPage = () => {
                 Técnico: {ticket.valoracion.tecnico?.name || 'Sin asignar'}
               </p>
             </div>
+          ) : ticket.estado?.nombre !== 'Pendiente' ? (
+            <p className="text-sm text-slate-500">
+              Este ticket no está disponible para valoración porque su estado actual es{' '}
+              <strong>{ticket.estado?.nombre || 'desconocido'}</strong>.
+            </p>
           ) : (
             <RoleGuard
               allowedRoles={[ROLES.PERSONAL_MANTENIMIENTO]}
@@ -212,84 +177,7 @@ const TicketDetailPage = () => {
                 </p>
               }
             >
-              <form onSubmit={handleCreateValoracion} className="flex flex-col gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-bold text-slate-700">
-                      Materiales y costos (opcional)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={addMaterial}
-                      className="flex items-center gap-1 text-xs font-bold text-[#2d6a4f] hover:underline"
-                    >
-                      <Plus size={14} /> Agregar material
-                    </button>
-                  </div>
-
-                  {materiales.length > 0 && (
-                    <div className="flex flex-col gap-2 mb-2">
-                      {materiales.map((material, index) => (
-                        <div key={index} className="flex gap-2 items-center">
-                          <input
-                            type="text"
-                            value={material.descripcion}
-                            onChange={(e) => updateMaterial(index, 'descripcion', e.target.value)}
-                            placeholder="Ej. Bomba de agua"
-                            className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm"
-                          />
-                          <input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={material.costo}
-                            onChange={(e) => updateMaterial(index, 'costo', e.target.value)}
-                            placeholder="Costo"
-                            className="w-28 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeMaterial(index)}
-                            className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      ))}
-                      <p className="text-right text-xs font-bold text-slate-600">
-                        Total: {formatCurrency(totalMateriales)}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">
-                    Observaciones de la valoración
-                  </label>
-                  <textarea
-                    name="observaciones"
-                    rows={4}
-                    required
-                    placeholder="Describe la revisión técnica realizada..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm resize-none"
-                  />
-                </div>
-
-                {error && (
-                  <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-                    {error}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-[#163d2a] hover:bg-[#1e4535] text-white rounded-xl font-bold py-3 transition-all active:scale-[0.98] shadow-lg shadow-[#163d2a]/20 text-sm disabled:opacity-60"
-                >
-                  {isSubmitting ? 'Guardando...' : 'Crear valoración técnica'}
-                </button>
-              </form>
+              <ValuationForm ticketId={ticket.id} onSuccess={loadTicket} />
             </RoleGuard>
           )}
         </section>

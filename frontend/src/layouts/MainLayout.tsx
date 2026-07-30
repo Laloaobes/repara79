@@ -55,7 +55,7 @@ const buildNavItems = (role: Role | null): NavItem[] => [
     id: 'tickets-pendientes',
     label: 'Tickets Pendientes',
     icon: <ClipboardList size={20} />,
-    path: '/tickets',
+    path: '/tickets-por-valorar',
     roles: [ROLES.PERSONAL_MANTENIMIENTO],
   },
   {
