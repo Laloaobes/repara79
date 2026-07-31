@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\SupportedImage;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTicketRequest extends FormRequest
@@ -21,7 +22,13 @@ class StoreTicketRequest extends FormRequest
             'descripcion_desperfecto' => ['required', 'string'],
             'ubicacion' => ['required', 'string'],
             'otro_desperfecto' => ['nullable', 'string', 'max:150'],
-            'fotografia_inicial' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'fotografia_referencia' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+                new SupportedImage,
+            ],
         ];
     }
 }

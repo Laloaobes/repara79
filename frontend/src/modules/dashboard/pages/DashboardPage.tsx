@@ -58,7 +58,7 @@ const DashboardPage = () => {
     prioridad: ticket.prioridad?.nombre || 'Sin prioridad',
     area: ticket.area?.nombre || 'Sin area',
     tecnico: 'Sin asignar',
-    bgImg: ticket.fotografia_inicial_url || null,
+    bgImg: ticket.fotografia_referencia_url || null,
   });
 
   const loadTickets = async () => {

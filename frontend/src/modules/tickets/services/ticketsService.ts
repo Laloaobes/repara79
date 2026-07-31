@@ -57,8 +57,7 @@ export interface Ticket {
   titulo: string;
   descripcion_desperfecto: string;
   ubicacion: string;
-  fotografia_inicial?: string | null;
-  fotografia_inicial_url?: string | null;
+  fotografia_referencia_url?: string | null;
   created_at: string;
   area?: AreaTicket | null;
   tipo_desperfecto?: TicketCatalogItem | null;
@@ -89,7 +88,7 @@ export interface CreateTicketPayload {
   descripcion_desperfecto: string;
   ubicacion: string;
   otro_desperfecto?: string;
-  fotografia_inicial?: File | null;
+  fotografia_referencia?: File | null;
 }
 
 const ticketsService = {

@@ -160,7 +160,7 @@ Este documento conserva las decisiones que deben aplicar las épicas refinadas y
 - `APP_ENV=production`, `APP_DEBUG=false` y ningún secreto se guarda en Git.
 - El seeder que crea `admin@repara79.com` con contraseña fija debe retirarse o sustituirse antes de producción.
 - La cuenta administrativa inicial se aprovisiona mediante un procedimiento seguro sin credenciales codificadas.
-- La publicación directa de evidencias y reportes queda bloqueada; su consulta utiliza endpoints autenticados.
+- Para simplificar el MVP, avatares, referencias y evidencias fotográficas son públicas; los reportes PDF permanecen privados y su consulta utiliza endpoints autenticados.
 - Cada release se identifica por revisión, conserva `.env` y storage compartidos y permite volver a la versión anterior.
 - Los respaldos incluyen PostgreSQL, evidencias, PDF e inventario de versión.
 - Una copia que permanece únicamente en el HDD del servidor no se considera respaldo válido.
@@ -229,7 +229,9 @@ Esta numeración reemplaza las propuestas preliminares. PDF se implementa antes 
 ## Almacenamiento oficial
 
 - Todas las rutas persistidas son relativas al disco `public`.
-- Las evidencias se almacenan en:
+- Las imágenes públicas se almacenan en:
+  - `perfiles/{profile_uuid}/avatar.webp`
+  - `evidencias/ticket-{id}/referencia/`
   - `evidencias/ticket-{id}/inicial/`
   - `evidencias/ticket-{id}/durante/`
   - `evidencias/ticket-{id}/final/`
@@ -238,7 +240,7 @@ Esta numeración reemplaza las propuestas preliminares. PDF se implementa antes 
 - El PDF se almacena en:
   - `reportes/ticket-{id}/reporte-reparacion-ticket-{id}.pdf`
 - `evidencias_reparacion.imagen` almacena únicamente la ruta relativa de cada imagen.
-- `bitacoras_reparacion.archivo_pdf` almacena únicamente la ruta relativa del PDF.
+- `bitacoras_reparacion.archivo_pdf` almacena únicamente la ruta relativa del PDF en el disco privado de reportes.
 
 ## Contenido oficial del PDF
 
