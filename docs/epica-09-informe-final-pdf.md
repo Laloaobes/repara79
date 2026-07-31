@@ -119,7 +119,7 @@ El documento debe nombrar la sección como **Materiales autorizados**, no como i
 
 ## Almacenamiento y acceso
 
-- Disco Laravel: `public`.
+- Disco Laravel: `protected_reports`, sin enlace público.
 - Ruta relativa exacta:
   - `reportes/ticket-{id}/reporte-reparacion-ticket-{id}.pdf`
 - Nombre de descarga recomendado:

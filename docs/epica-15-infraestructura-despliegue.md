@@ -24,7 +24,7 @@ Al finalizar la épica:
 5. Laravel opera con `APP_ENV=production`, `APP_DEBUG=false` y secretos fuera del repositorio.
 6. React se entrega como archivos estáticos compilados; Vite no funciona como servidor de producción.
 7. Un worker de colas y Reverb permanecen activos mediante Supervisor.
-8. Los archivos de evidencias y reportes se conservan en almacenamiento persistente y no se descargan sin autorización.
+8. Las imágenes públicas y los reportes privados se conservan en almacenamiento persistente; los PDF no se descargan sin autorización.
 9. Existe un despliegue repetible con verificación de salud y posibilidad de rollback.
 10. Se generan respaldos de PostgreSQL y archivos en un medio distinto al disco principal.
 11. Se demuestra una restauración sin sobrescribir el ambiente productivo.
@@ -277,7 +277,7 @@ El frontend y la API utilizan preferentemente el mismo origen. CORS no admite co
 - `APP_DEBUG` permanece desactivado.
 - El directorio raíz del repositorio nunca se sirve por Nginx.
 - Nginx solo entrega el build de React y envía a PHP exclusivamente `backend/public/index.php`.
-- El acceso directo a `/storage/evidencias/` y `/storage/reportes/` se bloquea; la aplicación usa endpoints autenticados.
+- Las imágenes bajo `/storage/evidencias/` son públicas durante el MVP; los reportes no se publican y la aplicación los entrega mediante endpoints autenticados.
 - Los encabezados de seguridad y límites de carga se configuran sin impedir tres imágenes de hasta 5 MB.
 - Las actualizaciones de seguridad de Ubuntu se mantienen habilitadas y se documenta la política de reinicio.
 - Los logs no almacenan contraseñas, tokens, secretos o cuerpos completos de archivos.
@@ -287,7 +287,7 @@ El frontend y la API utilizan preferentemente el mismo origen. CORS no admite co
 El respaldo válido incluye:
 
 1. PostgreSQL mediante `pg_dump` en formato personalizado.
-2. `shared/backend/storage/app/public`, que contiene evidencias y reportes.
+2. `shared/backend/storage/app/public`, que contiene imágenes, y `shared/backend/storage/app/private`, que contiene reportes.
 3. Identificador de release, migraciones aplicadas y checksum de los archivos.
 4. Inventario de configuración sin exponer secretos.
 
@@ -615,7 +615,7 @@ Consume:
 - API bajo `/api`;
 - autorización de broadcast;
 - Reverb mediante `/app` y `/apps`;
-- descargas protegidas de evidencias y PDF.
+- descargas protegidas de PDF.
 
 ## Dependencias
 
@@ -712,7 +712,7 @@ Tech Lead.
   - autorizar `/api/broadcasting/auth`;
   - proxificar `/app` y `/apps` a Reverb local;
   - bloquear archivos ocultos y sensibles;
-  - bloquear acceso directo a evidencias y reportes;
+  - bloquear acceso directo a reportes privados;
   - limitar cargas y tiempos de espera;
   - registrar logs separados;
   - aplicar encabezados de seguridad.
@@ -875,7 +875,7 @@ La prueba de restauración:
 8. Con Reverb detenido, REST continúa mostrando la notificación y el flujo no se bloquea.
 9. Administración y Dashboard conservan las reglas E12-E13.
 10. Los errores no muestran stack trace o secretos.
-11. `/storage/evidencias` y `/storage/reportes` no permiten descarga directa.
+11. `/storage/evidencias` entrega las imágenes públicas del MVP y los reportes PDF no permiten descarga directa.
 12. PostgreSQL y Reverb no aceptan conexiones directas desde clientes.
 13. Tras reiniciar, todos los servicios vuelven automáticamente.
 14. El health check detecta un servicio esencial detenido.

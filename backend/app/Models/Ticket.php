@@ -9,7 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Ticket extends Model
 {
     protected $appends = [
-        'fotografia_inicial_url',
+        'fotografia_referencia_url',
+    ];
+
+    protected $hidden = [
+        'fotografia_referencia',
     ];
 
     protected $fillable = [
@@ -22,7 +26,7 @@ class Ticket extends Model
         'titulo',
         'descripcion_desperfecto',
         'ubicacion',
-        'fotografia_inicial',
+        'fotografia_referencia',
         'fecha_reporte',
     ];
 
@@ -63,16 +67,16 @@ class Ticket extends Model
         return $this->hasOne(Valoracion::class);
     }
 
-    public function getFotografiaInicialUrlAttribute(): ?string
+    public function getFotografiaReferenciaUrlAttribute(): ?string
     {
-        if (!$this->fotografia_inicial) {
+        if (! $this->fotografia_referencia) {
             return null;
         }
 
-        if (str_starts_with($this->fotografia_inicial, 'http://') || str_starts_with($this->fotografia_inicial, 'https://')) {
-            return $this->fotografia_inicial;
+        if (str_starts_with($this->fotografia_referencia, 'http://') || str_starts_with($this->fotografia_referencia, 'https://')) {
+            return $this->fotografia_referencia;
         }
 
-        return url('/storage/'.$this->fotografia_inicial);
+        return url('/storage/'.$this->fotografia_referencia);
     }
 }

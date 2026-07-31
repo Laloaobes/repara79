@@ -45,7 +45,7 @@ class ValoracionResource extends JsonResource
                 'titulo' => $this->ticket->titulo,
                 'descripcion_desperfecto' => $this->ticket->descripcion_desperfecto,
                 'ubicacion' => $this->ticket->ubicacion,
-                'fotografia_inicial_url' => $this->ticket->fotografia_inicial_url,
+                'fotografia_referencia_url' => $this->ticket->fotografia_referencia_url,
                 'estado' => $this->ticket->relationLoaded('estado') && $this->ticket->estado
                     ? [
                         'id' => $this->ticket->estado->id,

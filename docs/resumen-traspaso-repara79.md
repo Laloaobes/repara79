@@ -444,8 +444,8 @@ notifications + REST + Reverb
 - `APP_DEBUG=false`.
 - No se guardan secretos en Git.
 - El seeder actual que crea una cuenta administrativa con credenciales fijas debe retirarse o sustituirse.
-- El acceso directo a evidencias y reportes bajo `/storage` debe bloquearse.
-- La aplicación usa endpoints autenticados.
+- Las imágenes se publican bajo `/storage` durante el MVP.
+- Los reportes PDF permanecen privados y la aplicación los entrega mediante endpoints autenticados.
 - Estructura recomendada:
   - releases;
   - symlink `current`;

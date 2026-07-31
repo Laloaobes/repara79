@@ -11,7 +11,10 @@ use App\Models\PrioridadTicket;
 use App\Models\Sede;
 use App\Models\Ticket;
 use App\Models\TipoDesperfecto;
+use App\Services\MediaStorageService;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class TicketController extends Controller
 {
@@ -62,16 +65,10 @@ class TicketController extends Controller
         ]);
     }
 
-    public function store(StoreTicketRequest $request)
+    public function store(StoreTicketRequest $request, MediaStorageService $storage)
     {
         $validated = $request->validated();
-        $ticketData = Arr::except($validated, ['fotografia_inicial']);
-
-        if ($request->hasFile('fotografia_inicial')) {
-            $ticketData['fotografia_inicial'] = $request
-                ->file('fotografia_inicial')
-                ->store('tickets/evidencias', 'public');
-        }
+        $ticketData = Arr::except($validated, ['fotografia_referencia']);
 
         $estadoPendiente = EstadoTicket::firstOrCreate(
             ['nombre' => 'Pendiente'],
@@ -81,12 +78,33 @@ class TicketController extends Controller
             ]
         );
 
-        $ticket = Ticket::create([
-            ...$ticketData,
-            'usuario_id' => auth()->id(),
-            'estado_id' => $estadoPendiente->id,
-            'fecha_reporte' => now(),
-        ]);
+        $referencePath = null;
+
+        DB::beginTransaction();
+
+        try {
+            $ticket = Ticket::create([
+                ...$ticketData,
+                'usuario_id' => auth()->id(),
+                'estado_id' => $estadoPendiente->id,
+                'fecha_reporte' => now(),
+            ]);
+
+            if ($request->hasFile('fotografia_referencia')) {
+                $referencePath = $storage->storeTicketReference(
+                    $ticket,
+                    $request->file('fotografia_referencia')
+                );
+                $ticket->update(['fotografia_referencia' => $referencePath]);
+            }
+
+            DB::commit();
+        } catch (Throwable $exception) {
+            DB::rollBack();
+            $storage->delete($referencePath);
+
+            throw $exception;
+        }
 
         return response()->json([
             'success' => true,

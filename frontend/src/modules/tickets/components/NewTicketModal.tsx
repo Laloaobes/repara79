@@ -38,7 +38,7 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
     setMessage(null);
 
     const formData = new FormData(e.currentTarget);
-    const fotografiaInicial = formData.get('fotografia_inicial');
+    const fotografiaReferencia = formData.get('fotografia_referencia');
     const payload = new FormData();
 
     payload.append('titulo', String(formData.get('titulo') || ''));
@@ -48,8 +48,8 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
     payload.append('tipo_desperfecto_id', String(formData.get('tipo_desperfecto_id') || ''));
     payload.append('prioridad_id', String(formData.get('prioridad_id') || ''));
 
-    if (fotografiaInicial instanceof File && fotografiaInicial.size > 0) {
-      payload.append('fotografia_inicial', fotografiaInicial);
+    if (fotografiaReferencia instanceof File && fotografiaReferencia.size > 0) {
+      payload.append('fotografia_referencia', fotografiaReferencia);
     }
 
     try {
@@ -178,15 +178,15 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
             <div className="relative border-2 border-dashed border-[#52b788]/30 bg-[#f0fdf4]/50 rounded-2xl p-6 text-center hover:bg-[#f0fdf4] transition-colors group cursor-pointer">
               <input 
                 type="file" 
-                name="fotografia_inicial"
+                name="fotografia_referencia"
                 accept="image/png, image/jpeg, image/webp"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
               />
               <div className="w-10 h-10 mx-auto bg-white rounded-full flex items-center justify-center shadow-sm text-[#52b788] mb-3 group-hover:-translate-y-1 transition-transform">
                 <Upload size={18} strokeWidth={2.5} />
               </div>
-              <p className="text-sm font-bold text-[#163d2a] mb-1">Subir evidencia fotográfica</p>
-              <p className="text-[0.65rem] font-medium text-[#163d2a]/60 uppercase tracking-widest">PNG, JPG — máx. 5 MB</p>
+              <p className="text-sm font-bold text-[#163d2a] mb-1">Subir fotografía de referencia</p>
+              <p className="text-[0.65rem] font-medium text-[#163d2a]/60 uppercase tracking-widest">JPG, PNG o WebP — máx. 5 MB</p>
             </div>
 
             {/* Selector de Prioridad */}

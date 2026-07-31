@@ -12,7 +12,7 @@ export interface ValoracionPendiente extends Valoracion {
     titulo: string;
     descripcion_desperfecto: string;
     ubicacion: string;
-    fotografia_inicial_url?: string | null;
+    fotografia_referencia_url?: string | null;
     estado?: TicketCatalogItem | null;
     area?: AreaTicket | null;
     usuario?: TicketUsuario | null;

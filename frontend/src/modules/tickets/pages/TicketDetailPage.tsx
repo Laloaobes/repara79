@@ -77,10 +77,10 @@ const TicketDetailPage = () => {
           </div>
 
           <div className="w-full aspect-video rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
-            {ticket.fotografia_inicial_url ? (
+            {ticket.fotografia_referencia_url ? (
               <img
-                src={ticket.fotografia_inicial_url}
-                alt={`Evidencia fotografica de ${ticket.titulo}`}
+                src={ticket.fotografia_referencia_url}
+                alt={`Fotografía de referencia de ${ticket.titulo}`}
                 className="w-full h-full object-cover"
               />
             ) : (
