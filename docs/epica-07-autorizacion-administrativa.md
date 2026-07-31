@@ -2,7 +2,7 @@
 
 ## Identificación
 
-- **Estado real:** Parcialmente implementada; requiere corrección, terminación y validación.
+- **Estado real:** Terminada en `feature/afinacion-autorización-administrativa-de-valoracion`; contrato, Backend, Frontend y pruebas integrados.
 - **Prioridad:** Muy alta.
 - **Actor funcional principal:** Subdirector Administrativo.
 - **Actor funcional secundario:** Personal de Mantenimiento.
@@ -44,30 +44,31 @@ Al terminar la épica, el sistema debe cubrir el siguiente flujo:
 - Generación de PDF.
 - Autorización parcial de materiales individuales.
 
-## Contraste con la implementación actual
+## Estado de implementación al cierre
 
-| Capacidad                 | Estado             | Pendiente principal                         |
-| :------------------------ | :----------------- | :------------------------------------------ |
-| Consultar pendientes      | Parcial            | Agregar búsqueda, filtros y ordenamiento.   |
-| Ver detalle               | Parcial            | Crear un endpoint individual de detalle.    |
-| Autorizar                 | Parcial            | Validar estados y concurrencia.             |
-| Rechazar                  | Parcial            | Validar la transición y el motivo.          |
-| Corregir y reenviar       | No implementado    | Construir el flujo en backend y frontend.   |
-| Cantidades de materiales  | Inconsistente      | Alinear contrato, captura y visualización.  |
-| Pruebas específicas       | No implementado    | Agregar integración y evidencia funcional.  |
+| Capacidad | Estado |
+| :-- | :-- |
+| Contrato técnico y ejemplos | Implementado en `docs/epica-07-contrato-autorizacion.md` |
+| Consultar pendientes | Búsqueda, área y cuatro ordenamientos en servidor |
+| Ver detalle | Endpoint individual y DTO completo |
+| Autorizar | Transacción, bloqueo, estados conjuntos y contador |
+| Rechazar | Motivo recortado, transacción y estados conjuntos |
+| Concurrencia | Bloqueo de solicitud y ticket; segunda decisión controlada |
+| Corregir y reenviar | Propiedad, sincronización por ID y limpieza del ciclo |
+| Bandeja administrativa | Filtros, detalle, confirmaciones y errores recuperables |
+| Interfaz de mantenimiento | Motivo visible, edición, confirmación y reenvío |
+| Contrato monetario | Cantidad, costo unitario, subtotal y total con dos decimales |
+| Pruebas específicas | 11 pruebas y 102 aserciones E07 |
 
-### Evidencia técnica del contraste
+Evidencia reproducible:
 
-- **Consulta:** existen `GET /api/valoraciones/pendientes` y `ValoracionesPorAprobarPage.tsx`.
-- **Detalle:** la lista actual carga relaciones y abre un modal, pero no existe un endpoint individual.
-- **Autorización:** existe `POST /api/valoraciones/{valoracion}/autorizar`.
-- **Rechazo:** existen `POST /api/valoraciones/{valoracion}/rechazar` y `RechazarValoracionRequest`.
-- **Corrección y reenvío:** no existe una ruta ni un método para actualizar y reenviar una valoración rechazada.
-- **Historial futuro:** `historial_ticket` existe en las migraciones, pero queda fuera del MVP y no se utiliza en esta épica.
-- **Cantidades:** `materiales_ticket` contiene `cantidad`, pero el registro actual fija `1` y el DTO no la expone.
-- **Pruebas:** `backend/tests` no contiene casos específicos para valoración o autorización.
+- `docs/evidencias/epica-07/matriz-pruebas.md`
+- `docs/evidencias/epica-07/resultado-pruebas.md`
+- `backend/tests/Feature/Valoracion/ValoracionAuthorizationTest.php`
+- `backend/tests/Feature/Valoracion/ValoracionResubmissionTest.php`
 
-> **Contrato de entrada desde ÉPICA 06:** cada material se entrega con `id`, `descripcion`, `cantidad`, `costo_unitario` y `subtotal`; la valoración incluye `costo_estimado`. Los importes se serializan como cadenas decimales con dos posiciones. El código actual todavía usa `costo`, fija `cantidad = 1` y omite campos, por lo que debe alinearse mediante HU02-E06 antes de iniciar la integración de HU02, HU04, HU05 o HU06 de esta épica.
+El contrato de entrada de E06 está integrado y E07 ya no requiere reinterpretar
+materiales, estados ni importes.
 
 ## Estados y transiciones oficiales de esta épica
 

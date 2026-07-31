@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wrench, Calendar, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { Wrench, Calendar } from 'lucide-react';
+import EditRejectedValoracionModal from '../components/valuation/EditRejectedValoracionModal';
 import valoracionesService, { MiValoracion } from '../services/valoracionesService';
 import { formatCurrency } from '../../../utils/currency';
 
 const ESTADO_STYLES: Record<string, string> = {
-  Pendiente: 'bg-amber-50 text-amber-600 border-amber-200',
+  'Pendiente de autorización': 'bg-amber-50 text-amber-600 border-amber-200',
   Autorizada: 'bg-emerald-50 text-emerald-600 border-emerald-200',
   Rechazada: 'bg-red-50 text-red-600 border-red-200',
 };
@@ -24,8 +25,8 @@ const MisValoracionesPage = () => {
   const [valoraciones, setValoraciones] = useState<MiValoracion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
-  const [deletingMaterial, setDeletingMaterial] = useState<string | null>(null);
+  const [selected, setSelected] = useState<MiValoracion | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const loadValoraciones = async () => {
@@ -42,37 +43,6 @@ const MisValoracionesPage = () => {
 
     loadValoraciones();
   }, []);
-
-  const toggleMotivo = (id: number) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const handleDeleteMaterial = async (valoracionId: number, materialIndex: number) => {
-    const deletionKey = `${valoracionId}-${materialIndex}`;
-
-    setDeletingMaterial(deletionKey);
-    setError(null);
-
-    try {
-      const updatedValoracion = await valoracionesService.deleteMaterial(valoracionId, materialIndex);
-      setValoraciones((prev) => prev.map((valoracion) => (
-        valoracion.id === valoracionId ? updatedValoracion : valoracion
-      )));
-    } catch (err) {
-      console.error(err);
-      setError('No fue posible eliminar el material de la valoración.');
-    } finally {
-      setDeletingMaterial(null);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -97,6 +67,11 @@ const MisValoracionesPage = () => {
           {error}
         </p>
       )}
+      {success && (
+        <p role="status" className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+          {success}
+        </p>
+      )}
 
       {valoraciones.length === 0 ? (
         <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-sm text-center">
@@ -106,8 +81,6 @@ const MisValoracionesPage = () => {
       ) : (
         <div className="flex flex-col gap-3">
           {valoraciones.map((valoracion) => {
-            const isExpanded = expandedIds.has(valoracion.id);
-
             return (
               <div
                 key={valoracion.id}
@@ -144,20 +117,25 @@ const MisValoracionesPage = () => {
                 </div>
 
                 {valoracion.estado === 'Rechazada' && valoracion.motivo_rechazo && (
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleMotivo(valoracion.id)}
-                      className="flex items-center gap-1 text-xs font-bold text-red-600 hover:underline"
-                    >
-                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      {isExpanded ? 'Ocultar motivo de rechazo' : 'Ver motivo de rechazo'}
-                    </button>
-                    {isExpanded && (
-                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                    <div className="flex-1">
+                      <p className="text-[0.7rem] font-bold uppercase tracking-wide text-red-700 mb-1">
+                        Motivo de rechazo
+                      </p>
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
                         {valoracion.motivo_rechazo}
                       </p>
-                    )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelected(valoracion);
+                        setSuccess(null);
+                      }}
+                      className="shrink-0 px-4 py-3 bg-[#163d2a] text-white rounded-xl text-xs font-bold"
+                    >
+                      Corregir y reenviar
+                    </button>
                   </div>
                 )}
 
@@ -167,31 +145,21 @@ const MisValoracionesPage = () => {
                       Materiales
                     </p>
                     <div className="flex flex-col gap-2">
-                      {valoracion.materiales.map((material, index) => {
-                        const deletionKey = `${valoracion.id}-${index}`;
-                        const canDeleteMaterial = valoracion.estado === 'Pendiente';
-
+                      {valoracion.materiales.map((material) => {
                         return (
                           <div
-                            key={`${material.descripcion}-${index}`}
-                            className="flex items-center gap-3 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2"
+                            key={material.id}
+                            className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2"
                           >
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold text-slate-700 truncate">{material.descripcion}</p>
-                              <p className="text-[0.7rem] text-slate-500">{formatCurrency(material.costo)}</p>
+                              <p className="text-[0.7rem] text-slate-500">
+                                {material.cantidad} × {formatCurrency(material.costo_unitario)}
+                              </p>
                             </div>
-
-                            {canDeleteMaterial && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteMaterial(valoracion.id, index)}
-                                disabled={deletingMaterial === deletionKey}
-                                className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="Eliminar material"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            )}
+                            <span className="text-xs font-black text-slate-800">
+                              {formatCurrency(material.subtotal)}
+                            </span>
                           </div>
                         );
                       })}
@@ -203,6 +171,20 @@ const MisValoracionesPage = () => {
           })}
         </div>
       )}
+
+      <EditRejectedValoracionModal
+        open={selected !== null}
+        valoracion={selected}
+        onClose={() => setSelected(null)}
+        onSuccess={(updated) => {
+          setValoraciones((current) => current.map((item) => (
+            item.id === updated.id ? updated : item
+          )));
+          setSelected(null);
+          setError(null);
+          setSuccess('La valoración corregida fue reenviada para autorización.');
+        }}
+      />
     </div>
   );
 };

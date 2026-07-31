@@ -4,14 +4,16 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreValoracionRequest extends FormRequest
+class ReenviarValoracionRequest extends FormRequest
 {
-    public const MAX_MATERIALES = 50;
-
-    public const MAX_CANTIDAD = 1000000;
-
     public function authorize(): bool
     {
+        $valoracion = $this->route('valoracion');
+
+        if (! $valoracion || $valoracion->valorado_por !== $this->user()?->id) {
+            abort(404);
+        }
+
         return true;
     }
 
@@ -42,16 +44,16 @@ class StoreValoracionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ticket_id' => ['required', 'integer', 'exists:tickets,id'],
             'observaciones' => ['required', 'string', 'max:5000'],
-            'materiales' => ['required', 'array', 'min:1', 'max:'.self::MAX_MATERIALES],
-            'materiales.*' => ['required', 'array:descripcion,cantidad,costo_unitario'],
+            'materiales' => ['required', 'array', 'min:1', 'max:'.StoreValoracionRequest::MAX_MATERIALES],
+            'materiales.*' => ['required', 'array:id,descripcion,cantidad,costo_unitario'],
+            'materiales.*.id' => ['sometimes', 'integer', 'distinct', 'exists:materiales_ticket,id'],
             'materiales.*.descripcion' => ['required', 'string', 'max:150'],
             'materiales.*.cantidad' => [
                 'required',
                 'integer',
                 'min:1',
-                'max:'.self::MAX_CANTIDAD,
+                'max:'.StoreValoracionRequest::MAX_CANTIDAD,
             ],
             'materiales.*.costo_unitario' => [
                 'required',

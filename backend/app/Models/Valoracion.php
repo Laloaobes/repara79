@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\DecimalMoney;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -67,27 +68,40 @@ class Valoracion extends Model
 
         return $materiales
             ->map(fn (MaterialTicket $material) => [
+                'id' => $material->id,
                 'descripcion' => $material->nombre_material,
-                'costo' => (float) $material->costo_unitario,
+                'cantidad' => (int) $material->cantidad,
+                'costo_unitario' => DecimalMoney::format($material->costo_unitario),
+                'subtotal' => DecimalMoney::formatCents(
+                    DecimalMoney::multiplyToCents(
+                        (int) $material->cantidad,
+                        $material->costo_unitario
+                    )
+                ),
             ])
             ->values()
             ->all();
     }
 
-    public function getCostoEstimadoAttribute(): float
+    public function getCostoEstimadoAttribute(): string
     {
         $materiales = $this->relationLoaded('materialesTicket')
             ? $this->getRelation('materialesTicket')
             : $this->materialesTicket()->get();
 
-        return (float) $materiales->sum(
-            fn (MaterialTicket $material) => $material->cantidad * (float) $material->costo_unitario
+        $totalCents = $materiales->sum(
+            fn (MaterialTicket $material) => DecimalMoney::multiplyToCents(
+                (int) $material->cantidad,
+                $material->costo_unitario
+            )
         );
+
+        return DecimalMoney::formatCents($totalCents);
     }
 
     public function getEstadoAttribute(): string
     {
-        return $this->estado_general ?? 'Pendiente';
+        return $this->estado_general ?? 'Pendiente de autorización';
     }
 
     public function getTecnicoIdAttribute(): ?int

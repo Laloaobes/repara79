@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ValoracionController;
+use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -25,12 +25,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:Personal de Mantenimiento')->group(function () {
         Route::post('/valoraciones', [ValoracionController::class, 'store']);
         Route::get('/valoraciones/mis-valoraciones', [ValoracionController::class, 'misValoraciones']);
-        Route::delete('/valoraciones/{valoracion}/materiales/{materialIndex}', [ValoracionController::class, 'destroyMaterial']);
+        Route::put('/valoraciones/{valoracion}/reenviar', [ValoracionController::class, 'reenviar']);
     });
 
     // Exclusivo de "Subdirector Administrativo".
     Route::middleware('role:Subdirector Administrativo')->group(function () {
         Route::get('/valoraciones/pendientes', [ValoracionController::class, 'pendientes']);
+        Route::get('/valoraciones/{valoracion}', [ValoracionController::class, 'show']);
         Route::post('/valoraciones/{valoracion}/autorizar', [ValoracionController::class, 'autorizar']);
         Route::post('/valoraciones/{valoracion}/rechazar', [ValoracionController::class, 'rechazar']);
 
