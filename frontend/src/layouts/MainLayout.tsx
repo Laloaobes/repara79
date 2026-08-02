@@ -9,7 +9,6 @@ import {
   Settings,
   Plus,
   LogOut,
-  Bell,
   Search,
   Menu,
   X,
@@ -18,6 +17,7 @@ import {
 import NewTicketModal from '../modules/tickets/components/NewTicketModal';
 import { useAuth } from '../modules/auth/context/AuthContext';
 import { ROLES, Role } from '../constants/roles';
+import NotificationMenu from '../modules/notifications/components/NotificationMenu';
 
 const getInitials = (name: string) => {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -66,6 +66,20 @@ const buildNavItems = (role: Role | null): NavItem[] => [
     roles: [ROLES.PERSONAL_MANTENIMIENTO],
   },
   {
+    id: 'reparaciones',
+    label: 'Reparaciones',
+    icon: <Wrench size={20} />,
+    path: '/reparaciones',
+    roles: [ROLES.PERSONAL_MANTENIMIENTO],
+  },
+  {
+    id: 'archivero-reparaciones',
+    label: 'Archivero',
+    icon: <ClipboardCheck size={20} />,
+    path: '/archivero-reparaciones',
+    roles: [ROLES.PERSONAL_MANTENIMIENTO, ROLES.SUBDIRECTOR_ADMINISTRATIVO, ROLES.RESPONSABLE_DEL_LUGAR],
+  },
+  {
     id: 'valoraciones-por-aprobar',
     label: 'Valoraciones por Aprobar',
     icon: <ClipboardCheck size={20} />,
@@ -87,7 +101,6 @@ const ROLES_QUE_REPORTAN: Role[] = [ROLES.RESPONSABLE_DEL_LUGAR, ROLES.USUARIO_R
 
 const MainLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user: currentUser, role, logoutUser } = useAuth();
@@ -217,14 +230,7 @@ const MainLayout = () => {
               <Search size={20} />
             </button>
 
-            <div className="relative">
-              <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className={`p-2 rounded-xl transition-colors relative ${notificationsOpen ? 'bg-green-50 text-[#2d6a4f]' : 'text-slate-500 hover:bg-slate-100'}`}
-              >
-                <Bell size={22} />
-              </button>
-            </div>
+            <NotificationMenu />
 
             <div className="hidden md:flex w-9 h-9 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] items-center justify-center font-bold text-white text-sm shadow-sm cursor-pointer border-2 border-green-100">
               {getInitials(currentUser?.name || 'Usuario')}

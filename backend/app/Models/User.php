@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -82,6 +83,23 @@ class User extends Authenticatable
     public function valoraciones(): HasMany
     {
         return $this->hasMany(Valoracion::class, 'valorado_por');
+    }
+
+    public function reparaciones(): HasMany
+    {
+        return $this->hasMany(Reparacion::class, 'realizado_por');
+    }
+
+    public function bitacorasGeneradas(): HasMany
+    {
+        return $this->hasMany(BitacoraReparacion::class, 'generado_por');
+    }
+
+    public function areas(): BelongsToMany
+    {
+        return $this->belongsToMany(Area::class, 'usuario_area', 'usuario_id', 'area_id')
+            ->withPivot('activo')
+            ->withTimestamps();
     }
 
     /**

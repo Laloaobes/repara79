@@ -67,6 +67,16 @@ class Ticket extends Model
         return $this->hasOne(Valoracion::class);
     }
 
+    public function reparacion(): HasOne
+    {
+        return $this->hasOne(Reparacion::class);
+    }
+
+    public function bitacora(): HasOne
+    {
+        return $this->hasOne(BitacoraReparacion::class);
+    }
+
     public function getFotografiaReferenciaUrlAttribute(): ?string
     {
         if (! $this->fotografia_referencia) {

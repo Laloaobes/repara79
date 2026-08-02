@@ -14,6 +14,8 @@ import AjustesPage from './modules/settings/pages/AjustesPage';
 import ProtectedRoute from './modules/auth/components/ProtectedRoute';
 import { AuthProvider } from './modules/auth/context/AuthContext';
 import { ROLES } from './constants/roles';
+import RepairsPage from './modules/repairs/pages/RepairsPage';
+import RepairArchivePage from './modules/repairs/pages/RepairArchivePage';
 
 function App() {
   return (
@@ -39,6 +41,11 @@ function App() {
               <Route element={<ProtectedRoute allowedRoles={[ROLES.PERSONAL_MANTENIMIENTO]} />}>
                 <Route path="tickets-por-valorar" element={<PendingValuationTicketsPage />} />
                 <Route path="mis-valoraciones" element={<MisValoracionesPage />} />
+                <Route path="reparaciones" element={<RepairsPage />} />
+              </Route>
+
+              <Route element={<ProtectedRoute allowedRoles={[ROLES.PERSONAL_MANTENIMIENTO, ROLES.SUBDIRECTOR_ADMINISTRATIVO, ROLES.RESPONSABLE_DEL_LUGAR]} />}>
+                <Route path="archivero-reparaciones" element={<RepairArchivePage />} />
               </Route>
 
               {/* Exclusivas de "Subdirector Administrativo" */}

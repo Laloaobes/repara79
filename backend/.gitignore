@@ -11,6 +11,8 @@ Thumbs.db
 # Environment files
 .env
 .env.*
+!.env.example
+!.env.railway.example
 
 # Composer / Node dependencies
 /vendor/

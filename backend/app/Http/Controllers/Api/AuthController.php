@@ -14,6 +14,8 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request)
     {
+        abort_unless(config('deployment.allow_public_registration'), 404);
+
         $tipoUsuario = TipoUsuario::firstOrCreate([
             'nombre' => 'Usuario Registrado',
         ]);
@@ -35,8 +37,8 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'rol' => $tipoUsuario->nombre
-            ]
+                'rol' => $tipoUsuario->nombre,
+            ],
         ], 201);
     }
 
@@ -46,11 +48,11 @@ class AuthController extends Controller
             ->where('email', $request->email)
             ->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! $user->activo || ! Hash::check($request->password, $user->password)) {
 
             return response()->json([
                 'success' => false,
-                'message' => 'Credenciales incorrectas'
+                'message' => 'Credenciales incorrectas',
             ], 401);
         }
 
@@ -63,8 +65,8 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'rol' => $user->tipoUsuario->nombre
-            ]
+                'rol' => $user->tipoUsuario->nombre,
+            ],
         ]);
     }
 
@@ -79,7 +81,7 @@ class AuthController extends Controller
             'telefono' => $user->telefono,
             'apellido_paterno' => $user->apellido_paterno,
             'apellido_materno' => $user->apellido_materno,
-            'rol' => $user->tipoUsuario->nombre
+            'rol' => $user->tipoUsuario->nombre,
         ]);
     }
 
@@ -96,7 +98,7 @@ class AuthController extends Controller
             'telefono' => $user->telefono,
             'apellido_paterno' => $user->apellido_paterno,
             'apellido_materno' => $user->apellido_materno,
-            'rol' => $user->tipoUsuario->nombre
+            'rol' => $user->tipoUsuario->nombre,
         ]);
     }
 
@@ -108,7 +110,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sesión cerrada correctamente'
+            'message' => 'Sesión cerrada correctamente',
         ]);
     }
 }
