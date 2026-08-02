@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 
 
 const LoginPage = () => {
+  const registrationEnabled = import.meta.env.VITE_ALLOW_PUBLIC_REGISTRATION !== 'false';
   // Estados para controlar la UI
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
@@ -148,17 +149,19 @@ const LoginPage = () => {
             >
               Inicio de sesión
             </button>
-            <button 
-              type="button"
-              onClick={() => setActiveTab('register')}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border ${
-                activeTab === 'register' 
-                  ? 'bg-white text-[#1a4731] border-slate-200 shadow-sm' 
-                  : 'text-slate-400 hover:text-slate-600 border-transparent'
-              }`}
-            >
-              Registro
-            </button>
+            {registrationEnabled && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('register')}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border ${
+                  activeTab === 'register'
+                    ? 'bg-white text-[#1a4731] border-slate-200 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-600 border-transparent'
+                }`}
+              >
+                Registro
+              </button>
+            )}
           </div>
 
        
@@ -171,7 +174,9 @@ const LoginPage = () => {
               </h2>
               <p className="text-sm text-slate-500 mt-1">
                 {activeTab === 'login' 
-                  ? 'Ingresa tus credenciales para acceder al sistema.' 
+                  ? registrationEnabled
+                    ? 'Ingresa tus credenciales para acceder al sistema.'
+                    : 'Acceso restringido a las cuentas de demostración autorizadas.'
                   : 'Completa el formulario para solicitar acceso.'}
               </p>
             </div>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Area extends Model
@@ -23,5 +24,12 @@ class Area extends Model
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    public function responsables(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'usuario_area', 'area_id', 'usuario_id')
+            ->withPivot('activo')
+            ->withTimestamps();
     }
 }

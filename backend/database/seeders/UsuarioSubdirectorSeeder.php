@@ -10,18 +10,29 @@ class UsuarioSubdirectorSeeder extends Seeder
 {
     public function run(): void
     {
+        $email = env('INITIAL_ADMIN_EMAIL');
+        $password = env('INITIAL_ADMIN_PASSWORD');
+
+        if (! $email || ! $password) {
+            $this->command?->warn(
+                'UsuarioSubdirectorSeeder omitido: usa app:provision-demo-users o define credenciales explícitas.'
+            );
+
+            return;
+        }
+
         $tipoSubdirectorAdministrativo = TipoUsuario::firstOrCreate([
             'nombre' => 'Subdirector Administrativo',
         ]);
 
         $user = User::firstOrCreate(
             [
-                'email' => 'admin@repara79.com',
+                'email' => $email,
             ],
             [
                 'tipo_usuario_id' => $tipoSubdirectorAdministrativo->id,
                 'name' => 'Subdirector Administrativo',
-                'password' => '12345678',
+                'password' => $password,
             ]
         );
 

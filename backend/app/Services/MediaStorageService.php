@@ -37,6 +37,30 @@ class MediaStorageService
         return $path;
     }
 
+    public function storeRepairEvidence(Ticket $ticket, string $stage, UploadedFile $file): string
+    {
+        $extension = SupportedImageType::extensionForMime($file->getMimeType());
+        $path = StoragePath::repairEvidence(
+            $ticket->id,
+            $stage,
+            (string) Str::uuid(),
+            $extension
+        );
+
+        $stored = Storage::disk(self::IMAGE_DISK)->putFileAs(
+            dirname($path),
+            $file,
+            basename($path)
+        );
+
+        if ($stored !== $path || ! Storage::disk(self::IMAGE_DISK)->exists($path)) {
+            Storage::disk(self::IMAGE_DISK)->delete($path);
+            throw new RuntimeException("No fue posible almacenar la evidencia {$stage}.");
+        }
+
+        return $path;
+    }
+
     public function delete(?string $path): void
     {
         if ($path !== null && $path !== '') {

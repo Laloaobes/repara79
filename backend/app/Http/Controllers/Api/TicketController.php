@@ -130,6 +130,9 @@ class TicketController extends Controller
                 'prioridad',
                 'usuario',
                 'valoracion.tecnico',
+                'reparacion.responsable',
+                'reparacion.evidencias',
+                'reparacion.bitacora',
             ]),
         ]);
     }
