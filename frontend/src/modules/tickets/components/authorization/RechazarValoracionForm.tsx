@@ -20,7 +20,9 @@ const RechazarValoracionForm = ({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       rows={4}
+      minLength={5}
       maxLength={500}
+      required
       autoFocus
       disabled={disabled}
       placeholder="Explica qué debe corregirse..."

@@ -23,6 +23,27 @@ const requestErrorMessage = (error: unknown): string => {
     || 'No fue posible reenviar la valoración.';
 };
 
+const hasFormChanges = (
+  valoracion: MiValoracion,
+  observaciones: string,
+  rows: MaterialRowDraft[],
+): boolean => {
+  if (observaciones.trim() !== valoracion.observaciones.trim()) return true;
+  const originalMaterials = valoracion.materiales ?? [];
+  if (rows.length !== originalMaterials.length) return true;
+
+  const originals = new Map(originalMaterials.map((material) => [material.id, material]));
+
+  return rows.some((row) => {
+    if (!row.id) return true;
+    const original = originals.get(row.id);
+    return !original
+      || row.descripcion.trim() !== original.descripcion.trim()
+      || Number(row.cantidad) !== Number(original.cantidad)
+      || Number(row.costo_unitario) !== Number(original.costo_unitario);
+  });
+};
+
 const EditRejectedValoracionModal = ({
   open,
   valoracion,
@@ -73,6 +94,11 @@ const EditRejectedValoracionModal = ({
     const rowsError = validateMaterialRows(rows);
     if (rowsError) {
       setError(rowsError);
+      return;
+    }
+
+    if (!hasFormChanges(valoracion, observaciones, rows)) {
+      setError('No se envió la corrección porque la valoración técnica no contiene ninguna modificación.');
       return;
     }
 
@@ -175,7 +201,9 @@ const EditRejectedValoracionModal = ({
                 value={observaciones}
                 onChange={(event) => setObservaciones(event.target.value)}
                 rows={5}
+                minLength={5}
                 maxLength={5000}
+                required
                 disabled={isSubmitting}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#52b788] text-sm resize-none disabled:opacity-60"
               />

@@ -113,11 +113,49 @@ class ValoracionResubmissionTest extends ValoracionTestCase
         $valoracion = $this->valoracion($owner, $this->ticket(), 'Pendiente de autorización');
         Sanctum::actingAs($owner);
 
-        $this->putJson("/api/valoraciones/{$valoracion->id}/reenviar", $this->payload($valoracion))
+        $payload = $this->payload($valoracion);
+        $payload['observaciones'] = $valoracion->observaciones;
+
+        $this->putJson("/api/valoraciones/{$valoracion->id}/reenviar", $payload)
             ->assertUnprocessable();
 
         $this->assertSame('Pendiente de autorización', $valoracion->fresh()->estado_general);
         $this->assertSame('Valorado', $valoracion->ticket->fresh()->estado->nombre);
+    }
+
+    public function test_rejected_valoracion_cannot_be_resubmitted_without_any_change(): void
+    {
+        $owner = $this->userWithRole('Personal de Mantenimiento');
+        $reviewer = $this->userWithRole('Subdirector Administrativo');
+        $valoracion = $this->valoracion(
+            $owner,
+            $this->ticket('Rechazado'),
+            'Rechazada',
+            [
+                'observaciones' => 'Conservar exactamente estas observaciones.',
+                'motivo_rechazo' => 'Debe corregirse.',
+                'validado_por' => $reviewer->id,
+                'fecha_validacion' => now(),
+            ]
+        );
+        Sanctum::actingAs($owner);
+
+        $payload = $this->payload($valoracion);
+        $payload['observaciones'] = $valoracion->observaciones;
+
+        $this->putJson("/api/valoraciones/{$valoracion->id}/reenviar", $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('valoracion')
+            ->assertJsonPath(
+                'errors.valoracion.0',
+                'No se envió la corrección porque la valoración técnica no contiene ninguna modificación.'
+            );
+
+        $valoracion->refresh();
+        $this->assertSame('Rechazada', $valoracion->estado_general);
+        $this->assertSame('Rechazado', $valoracion->ticket->fresh()->estado->nombre);
+        $this->assertSame($reviewer->id, $valoracion->validado_por);
+        $this->assertDatabaseCount('notifications', 0);
     }
 
     public function test_material_from_another_valoracion_is_rejected_and_transaction_rolls_back(): void

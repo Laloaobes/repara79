@@ -21,7 +21,7 @@ class StartRepairRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'estado_inicial' => ['required', 'string', 'max:5000'],
+            'estado_inicial' => ['required', 'string', 'min:5', 'max:5000'],
         ];
     }
 }

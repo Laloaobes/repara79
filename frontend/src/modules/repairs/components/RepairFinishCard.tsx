@@ -65,7 +65,7 @@ const RepairFinishCard = ({ repair, busy, onBusy, onCompleted, onMessage, onErro
     setFileErrors((current) => { const next = { ...current }; delete next[stage]; return next; });
   };
 
-  const ready = process.trim() && finalState.trim() && stages.every(({ key }) => files[key] && !fileErrors[key]);
+  const ready = process.trim().length >= 5 && finalState.trim().length >= 5 && stages.every(({ key }) => files[key] && !fileErrors[key]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -100,8 +100,8 @@ const RepairFinishCard = ({ repair, busy, onBusy, onCompleted, onMessage, onErro
     </div>
     <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><b>Estado inicial confirmado:</b> {repair.estado_inicial}</div>
     <div className="grid gap-3 md:grid-cols-2">
-      <label className="text-sm font-bold text-slate-700">Proceso realizado<textarea value={process} onChange={(event) => setProcess(event.target.value)} required maxLength={10000} placeholder="Describe las acciones, materiales y comprobaciones realizadas" className="mt-2 min-h-32 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:ring-2 focus:ring-emerald-400" /></label>
-      <label className="text-sm font-bold text-slate-700">Estado final<textarea value={finalState} onChange={(event) => setFinalState(event.target.value)} required maxLength={5000} placeholder="Describe el resultado verificable de la reparación" className="mt-2 min-h-32 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:ring-2 focus:ring-emerald-400" /></label>
+      <label className="text-sm font-bold text-slate-700">Proceso realizado<textarea value={process} onChange={(event) => setProcess(event.target.value)} required minLength={5} maxLength={10000} placeholder="Describe las acciones, materiales y comprobaciones realizadas" className="mt-2 min-h-32 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:ring-2 focus:ring-emerald-400" /></label>
+      <label className="text-sm font-bold text-slate-700">Estado final<textarea value={finalState} onChange={(event) => setFinalState(event.target.value)} required minLength={5} maxLength={5000} placeholder="Describe el resultado verificable de la reparación" className="mt-2 min-h-32 w-full rounded-xl border border-slate-200 p-3 text-sm font-normal outline-none focus:ring-2 focus:ring-emerald-400" /></label>
     </div>
     <div>
       <p className="mb-3 text-sm font-bold text-slate-700"><Camera size={17} className="mr-2 inline" />Evidencias obligatorias</p>

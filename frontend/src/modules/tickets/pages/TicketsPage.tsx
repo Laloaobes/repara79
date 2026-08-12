@@ -127,6 +127,7 @@ const TicketsPage = () => {
       <div className="relative w-full shadow-sm">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
         <input 
+          maxLength={150}
           type="text" 
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}

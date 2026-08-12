@@ -174,6 +174,21 @@ class UserAreaAssignmentTest extends ValoracionTestCase
         ])->assertForbidden();
     }
 
+    public function test_authenticated_responsible_receives_only_active_areas_in_session_payload(): void
+    {
+        $responsible = $this->userWithRole('Responsable del Lugar');
+        [$activeArea, $inactiveArea] = Area::query()->orderBy('id')->limit(2)->get();
+        $responsible->areas()->attach($activeArea->id, ['activo' => true]);
+        $responsible->areas()->attach($inactiveArea->id, ['activo' => false]);
+        Sanctum::actingAs($responsible);
+
+        $this->getJson('/api/me')
+            ->assertOk()
+            ->assertJsonCount(1, 'areas')
+            ->assertJsonPath('areas.0.id', $activeArea->id)
+            ->assertJsonPath('areas.0.nombre', $activeArea->nombre);
+    }
+
     public function test_database_allows_only_one_active_assignment_per_area(): void
     {
         $firstResponsible = $this->userWithRole('Responsable del Lugar');

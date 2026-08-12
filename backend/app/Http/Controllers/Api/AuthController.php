@@ -33,12 +33,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'rol' => $tipoUsuario->nombre,
-            ],
+            'user' => $this->userData($user),
         ], 201);
     }
 
@@ -61,12 +56,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'rol' => $user->tipoUsuario->nombre,
-            ],
+            'user' => $this->userData($user),
         ]);
     }
 
@@ -74,15 +64,7 @@ class AuthController extends Controller
     {
         $user = auth()->user();
 
-        return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'telefono' => $user->telefono,
-            'apellido_paterno' => $user->apellido_paterno,
-            'apellido_materno' => $user->apellido_materno,
-            'rol' => $user->tipoUsuario->nombre,
-        ]);
+        return response()->json($this->userData($user));
     }
 
     public function updateProfile(UpdateProfileRequest $request)
@@ -91,15 +73,7 @@ class AuthController extends Controller
 
         $user->update($request->validated());
 
-        return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'telefono' => $user->telefono,
-            'apellido_paterno' => $user->apellido_paterno,
-            'apellido_materno' => $user->apellido_materno,
-            'rol' => $user->tipoUsuario->nombre,
-        ]);
+        return response()->json($this->userData($user->fresh()));
     }
 
     public function logout()
@@ -112,5 +86,32 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Sesión cerrada correctamente',
         ]);
+    }
+
+    private function userData(User $user): array
+    {
+        $user->loadMissing(['tipoUsuario', 'areas.sede']);
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'telefono' => $user->telefono,
+            'apellido_paterno' => $user->apellido_paterno,
+            'apellido_materno' => $user->apellido_materno,
+            'rol' => $user->tipoUsuario->nombre,
+            'areas' => $user->areas
+                ->filter(fn ($area) => (bool) $area->pivot->activo)
+                ->values()
+                ->map(fn ($area) => [
+                    'id' => $area->id,
+                    'nombre' => $area->nombre,
+                    'ubicacion' => $area->ubicacion,
+                    'sede' => $area->sede ? [
+                        'id' => $area->sede->id,
+                        'nombre' => $area->sede->nombre,
+                    ] : null,
+                ]),
+        ];
     }
 }

@@ -16,7 +16,7 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'min:3', 'max:255'],
             // whereNull('deleted_at') evita que un correo de una cuenta dada de baja
             // (soft delete) bloquee un nuevo registro con ese mismo correo.
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],

@@ -10,6 +10,12 @@ export interface AuthUser {
   telefono?: string | null;
   apellido_paterno?: string | null;
   apellido_materno?: string | null;
+  areas?: Array<{
+    id: number;
+    nombre: string;
+    ubicacion?: string | null;
+    sede?: { id: number; nombre: string } | null;
+  }>;
 }
 
 interface AuthContextValue {

@@ -59,6 +59,8 @@ const MaterialRowsEditor = ({ rows, disabled = false, onChange }: MaterialRowsEd
               id={`material-${row.localId}`}
               type="text"
               maxLength={150}
+              minLength={2}
+              required
               value={row.descripcion}
               onChange={(event) => updateRow(row.localId, 'descripcion', event.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-[#52b788] text-sm"
@@ -76,6 +78,7 @@ const MaterialRowsEditor = ({ rows, disabled = false, onChange }: MaterialRowsEd
               step={1}
               inputMode="numeric"
               value={row.cantidad}
+              required
               onChange={(event) => updateRow(row.localId, 'cantidad', event.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-[#52b788] text-sm"
             />
@@ -92,6 +95,7 @@ const MaterialRowsEditor = ({ rows, disabled = false, onChange }: MaterialRowsEd
               step="0.01"
               inputMode="decimal"
               value={row.costo_unitario}
+              required
               onChange={(event) => updateRow(row.localId, 'costo_unitario', event.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-[#52b788] text-sm"
             />

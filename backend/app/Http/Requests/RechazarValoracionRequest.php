@@ -14,7 +14,7 @@ class RechazarValoracionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'motivo_rechazo' => ['required', 'string', 'max:500'],
+            'motivo_rechazo' => ['required', 'string', 'min:5', 'max:500'],
         ];
     }
 

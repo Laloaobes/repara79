@@ -6,6 +6,7 @@ use App\Models\EstadoTicket;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Valoracion;
+use App\Support\DecimalMoney;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -58,6 +59,31 @@ class ValoracionResubmissionService
             if ($receivedIds->diff($existingMaterials->keys())->isNotEmpty()) {
                 throw ValidationException::withMessages([
                     'materiales' => 'Uno o más materiales no pertenecen a esta valoración.',
+                ]);
+            }
+
+            $materialsChanged = count($data['materiales']) !== $existingMaterials->count();
+
+            foreach ($data['materiales'] as $materialData) {
+                if (! isset($materialData['id'])) {
+                    $materialsChanged = true;
+                    break;
+                }
+
+                $existing = $existingMaterials->get((int) $materialData['id']);
+                if (! $existing
+                    || trim($existing->nombre_material) !== $materialData['descripcion']
+                    || (int) $existing->cantidad !== (int) $materialData['cantidad']
+                    || DecimalMoney::toCents($existing->costo_unitario)
+                        !== DecimalMoney::toCents($materialData['costo_unitario'])) {
+                    $materialsChanged = true;
+                    break;
+                }
+            }
+
+            if ($valoracion->observaciones === $data['observaciones'] && ! $materialsChanged) {
+                throw ValidationException::withMessages([
+                    'valoracion' => 'No se envió la corrección porque la valoración técnica no contiene ninguna modificación.',
                 ]);
             }
 

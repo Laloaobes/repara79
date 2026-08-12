@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { X, Upload } from 'lucide-react';
+import axios from 'axios';
+import { ImagePlus, X } from 'lucide-react';
 import ticketsService, { TicketCatalogs } from '../services/ticketsService';
+import SystemAlert from '../../../components/SystemAlert';
+
+const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+const maxImageBytes = 5 * 1024 * 1024;
 
 interface NewTicketModalProps {
   isOpen: boolean;
@@ -12,6 +17,12 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
   const [catalogs, setCatalogs] = useState<TicketCatalogs | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -29,6 +40,39 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
     loadCatalogs();
   }, [isOpen]);
 
+  const selectImage = (file?: File) => {
+    setMessage(null);
+
+    if (!file) {
+      setSelectedImage(null);
+      setPreviewUrl(null);
+      return;
+    }
+    if (!allowedImageTypes.includes(file.type)) {
+      setMessage('La fotografía debe estar en formato JPG, PNG o WebP.');
+      setSelectedImage(null);
+      setPreviewUrl(null);
+      return;
+    }
+    if (file.size > maxImageBytes) {
+      setMessage('La fotografía no puede superar los 5 MB.');
+      setSelectedImage(null);
+      setPreviewUrl(null);
+      return;
+    }
+
+    setSelectedImage(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const closeModal = () => {
+    if (isSubmitting) return;
+    setSelectedImage(null);
+    setPreviewUrl(null);
+    setMessage(null);
+    onClose();
+  };
+
   // Prevenir renderizado si no está abierto
   if (!isOpen) return null;
 
@@ -38,7 +82,6 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
     setMessage(null);
 
     const formData = new FormData(e.currentTarget);
-    const fotografiaReferencia = formData.get('fotografia_referencia');
     const payload = new FormData();
 
     payload.append('titulo', String(formData.get('titulo') || ''));
@@ -48,19 +91,26 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
     payload.append('tipo_desperfecto_id', String(formData.get('tipo_desperfecto_id') || ''));
     payload.append('prioridad_id', String(formData.get('prioridad_id') || ''));
 
-    if (fotografiaReferencia instanceof File && fotografiaReferencia.size > 0) {
-      payload.append('fotografia_referencia', fotografiaReferencia);
+    if (selectedImage) {
+      payload.append('fotografia_referencia', selectedImage);
     }
 
     try {
       await ticketsService.createTicket(payload);
 
-      setMessage('Ticket creado correctamente.');
+      setSelectedImage(null);
+      setPreviewUrl(null);
       onCreated?.();
       onClose();
     } catch (error) {
       console.error(error);
-      setMessage('No fue posible crear el ticket. Revisa los campos e intenta nuevamente.');
+      const errors = axios.isAxiosError(error)
+        ? error.response?.data?.errors as Record<string, string[]> | undefined
+        : undefined;
+      setMessage(
+        (errors && Object.values(errors).flat()[0])
+        || 'No fue posible crear el ticket. Revisa los campos e intenta nuevamente.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -70,7 +120,7 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
     /* Backdrop con Blur (Cierra el modal al hacer clic afuera) */
     <div 
       className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" 
-      onClick={onClose}
+      onClick={closeModal}
     >
       
       {/* Modal Content (Detiene la propagación del clic para que no se cierre al hacer clic adentro) */}
@@ -87,7 +137,7 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
           </div>
           <button 
             type="button"
-            onClick={onClose}
+            onClick={closeModal}
             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
           >
             <X size={20} />
@@ -106,6 +156,8 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
               <input 
                 type="text" 
                 name="titulo"
+                minLength={3}
+                maxLength={150}
                 placeholder="Ej. Fuga de agua en baño" 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
                 required
@@ -120,6 +172,8 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
               <input 
                 type="text" 
                 name="ubicacion"
+                minLength={3}
+                maxLength={255}
                 placeholder="Ej. Aula 7, Edificio B" 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400"
                 required
@@ -134,6 +188,8 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
               <textarea 
                 name="descripcion_desperfecto"
                 rows={4}
+                minLength={5}
+                maxLength={5000}
                 placeholder="Describe el problema con detalle..." 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700 placeholder:text-slate-400 resize-none"
                 required
@@ -175,18 +231,38 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
             </div>
 
             {/* Subir Evidencia */}
-            <div className="relative border-2 border-dashed border-[#52b788]/30 bg-[#f0fdf4]/50 rounded-2xl p-6 text-center hover:bg-[#f0fdf4] transition-colors group cursor-pointer">
-              <input 
-                type="file" 
-                name="fotografia_referencia"
-                accept="image/png, image/jpeg, image/webp"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-              />
-              <div className="w-10 h-10 mx-auto bg-white rounded-full flex items-center justify-center shadow-sm text-[#52b788] mb-3 group-hover:-translate-y-1 transition-transform">
-                <Upload size={18} strokeWidth={2.5} />
-              </div>
-              <p className="text-sm font-bold text-[#163d2a] mb-1">Subir fotografía de referencia</p>
-              <p className="text-[0.65rem] font-medium text-[#163d2a]/60 uppercase tracking-widest">JPG, PNG o WebP — máx. 5 MB</p>
+            <div className="overflow-hidden rounded-2xl border-2 border-dashed border-[#52b788]/30 bg-[#f0fdf4]/50">
+              {previewUrl ? (
+                <div>
+                  <div className="relative h-56 bg-slate-100">
+                    <img src={previewUrl} alt="Vista previa de la fotografía seleccionada" className="h-full w-full object-contain" />
+                    <button
+                      type="button"
+                      onClick={() => selectImage()}
+                      aria-label="Quitar fotografía seleccionada"
+                      className="absolute right-3 top-3 rounded-full bg-slate-900/75 p-2 text-white hover:bg-slate-900"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 bg-white px-4 py-3 text-xs">
+                    <span className="truncate font-semibold text-slate-600">{selectedImage?.name}</span>
+                    <label className="shrink-0 cursor-pointer font-bold text-emerald-700 hover:underline">
+                      Cambiar
+                      <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => selectImage(event.target.files?.[0])} />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex cursor-pointer flex-col items-center p-6 text-center hover:bg-[#f0fdf4]">
+                  <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#52b788] shadow-sm">
+                    <ImagePlus size={19} />
+                  </span>
+                  <span className="mb-1 text-sm font-bold text-[#163d2a]">Seleccionar fotografía de referencia</span>
+                  <span className="text-[0.65rem] font-medium uppercase tracking-widest text-[#163d2a]/60">JPG, PNG o WebP — máx. 5 MB</span>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(event) => selectImage(event.target.files?.[0])} />
+                </label>
+              )}
             </div>
 
             {/* Selector de Prioridad */}
@@ -207,9 +283,7 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
             </div>
 
             {message && (
-              <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-                {message}
-              </p>
+              <SystemAlert message={message} onDismiss={() => setMessage(null)} />
             )}
 
           </form>
@@ -219,7 +293,7 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
         <div className="p-4 md:p-6 border-t border-slate-100 flex gap-3 shrink-0 bg-slate-50/50 rounded-b-[2rem]">
           <button 
             type="button" 
-            onClick={onClose}
+            onClick={closeModal}
             className="flex-1 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors text-sm"
           >
             Cancelar

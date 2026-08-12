@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { 
   Mail, 
   Lock, 
@@ -12,6 +13,7 @@ import {
 import { login, register } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SystemAlert from '../../../components/SystemAlert';
 
 
 
@@ -20,6 +22,8 @@ const LoginPage = () => {
   // Estados para controlar la UI
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
@@ -27,17 +31,29 @@ const LoginPage = () => {
   // Función para manejar el envío del formulario (Preparado para producción)
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setMessage(null);
     
     // Aquí recolectamos los datos del formulario de manera segura
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
     
     if (activeTab === 'register') {
+      if (String(data.fullName || '').trim().length < 3) {
+        setMessage('El nombre completo debe tener al menos 3 caracteres.');
+        return;
+      }
       if (data.password !== data.confirmPassword) {
-        alert("Las contraseñas no coinciden");
+        setMessage('Las contraseñas no coinciden.');
         return;
       }
 
+      if (String(data.password || '').length < 8) {
+        setMessage('La contraseña debe tener al menos 8 caracteres.');
+        return;
+      }
+
+      setIsSubmitting(true);
       try {
         const response = await register(
           data.fullName as string,
@@ -53,9 +69,18 @@ const LoginPage = () => {
         navigate("/");
       } catch (error) {
         console.error(error);
-        alert("No fue posible crear la cuenta. Revisa los datos e intenta nuevamente.");
+        const errors = axios.isAxiosError(error)
+          ? error.response?.data?.errors as Record<string, string[]> | undefined
+          : undefined;
+        setMessage(
+          (errors && Object.values(errors).flat()[0])
+          || 'No fue posible crear la cuenta. Revisa los datos e intenta nuevamente.'
+        );
+      } finally {
+        setIsSubmitting(false);
       }
     } else {
+      setIsSubmitting(true);
       try {
         const response = await login(
           data.email as string,
@@ -69,8 +94,13 @@ const LoginPage = () => {
         navigate("/");
       } catch (error) {
         console.error(error);
-
-        alert("Correo o contraseña incorrectos");
+        setMessage(
+          axios.isAxiosError(error) && error.response?.status === 429
+            ? 'Se realizaron demasiados intentos. Espera un momento antes de volver a intentar.'
+            : 'Correo o contraseña incorrectos.'
+        );
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -140,7 +170,7 @@ const LoginPage = () => {
           <div className="flex bg-slate-50 border border-slate-100 p-1.5 rounded-2xl mb-8 shrink-0">
             <button 
               type="button"
-              onClick={() => setActiveTab('login')}
+              onClick={() => { setActiveTab('login'); setMessage(null); }}
               className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border ${
                 activeTab === 'login' 
                   ? 'bg-white text-[#1a4731] border-slate-200 shadow-sm' 
@@ -152,7 +182,7 @@ const LoginPage = () => {
             {registrationEnabled && (
               <button
                 type="button"
-                onClick={() => setActiveTab('register')}
+                onClick={() => { setActiveTab('register'); setMessage(null); }}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border ${
                   activeTab === 'register'
                     ? 'bg-white text-[#1a4731] border-slate-200 shadow-sm'
@@ -198,6 +228,8 @@ const LoginPage = () => {
                         <input 
                           type="text" 
                           name="fullName"
+                          minLength={3}
+                          maxLength={255}
                           placeholder="Ej. Ángel García Martínez" 
                           className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent outline-none transition-all text-sm"
                           required
@@ -215,6 +247,7 @@ const LoginPage = () => {
                         <input 
                           type="email" 
                           name="email"
+                          maxLength={255}
                           placeholder="usuario@cbta79.edu.mx" 
                           className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent outline-none transition-all text-sm"
                           required
@@ -236,6 +269,7 @@ const LoginPage = () => {
                       <input 
                         type="email" 
                         name="email"
+                        maxLength={255}
                         placeholder="usuario@cbta79.edu.mx" 
                         className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent outline-none transition-all text-sm"
                         required
@@ -254,6 +288,8 @@ const LoginPage = () => {
                     <input 
                       type={showPassword ? "text" : "password"} 
                       name="password"
+                      minLength={activeTab === 'register' ? 8 : undefined}
+                      maxLength={255}
                       placeholder="••••••••" 
                       className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent outline-none transition-all text-sm font-medium tracking-wider"
                       required
@@ -279,6 +315,8 @@ const LoginPage = () => {
                       <input 
                         type="password" 
                         name="confirmPassword"
+                        minLength={8}
+                        maxLength={255}
                         placeholder="••••••••" 
                         className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent outline-none transition-all text-sm font-medium tracking-wider"
                         required
@@ -287,6 +325,12 @@ const LoginPage = () => {
                   </div>
                 )}
               </div>
+
+              {message && (
+                <div className="mt-5">
+                  <SystemAlert message={message} onDismiss={() => setMessage(null)} />
+                </div>
+              )}
 
               {/* Link de recuperación (Solo Login) */}
               {activeTab === 'login' && (
@@ -301,9 +345,10 @@ const LoginPage = () => {
               <div className={`mt-auto ${activeTab === 'register' ? 'pt-8' : 'pt-6'}`}>
                 <button 
                   type="submit" 
-                  className="w-full bg-[#2d6a4f] hover:bg-[#1a4731] text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-green-900/20"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#2d6a4f] hover:bg-[#1a4731] text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-green-900/20 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {activeTab === 'login' ? 'Ingresar al sistema' : 'Solicitar acceso'}
+                  {isSubmitting ? 'Procesando...' : activeTab === 'login' ? 'Ingresar al sistema' : 'Solicitar acceso'}
                 </button>
               </div>
             </form>

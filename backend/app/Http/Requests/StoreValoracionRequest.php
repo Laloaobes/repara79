@@ -43,10 +43,10 @@ class StoreValoracionRequest extends FormRequest
     {
         return [
             'ticket_id' => ['required', 'integer', 'exists:tickets,id'],
-            'observaciones' => ['required', 'string', 'max:5000'],
+            'observaciones' => ['required', 'string', 'min:5', 'max:5000'],
             'materiales' => ['required', 'array', 'min:1', 'max:'.self::MAX_MATERIALES],
             'materiales.*' => ['required', 'array:descripcion,cantidad,costo_unitario'],
-            'materiales.*.descripcion' => ['required', 'string', 'max:150'],
+            'materiales.*.descripcion' => ['required', 'string', 'min:2', 'max:150'],
             'materiales.*.cantidad' => [
                 'required',
                 'integer',

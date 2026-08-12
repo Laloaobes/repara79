@@ -43,6 +43,7 @@ const DashboardPage = () => {
   const isMantenimiento = role === ROLES.PERSONAL_MANTENIMIENTO;
   const isAdminTier = role === ROLES.SUBDIRECTOR_ADMINISTRATIVO;
   const puedeReportar = role === ROLES.RESPONSABLE_DEL_LUGAR || role === ROLES.USUARIO_REGISTRADO;
+  const isResponsable = role === ROLES.RESPONSABLE_DEL_LUGAR;
 
   const formatTicket = (ticket: ApiTicket): Ticket => ({
     id: `TK-${String(ticket.id).padStart(3, '0')}`,
@@ -265,6 +266,38 @@ const DashboardPage = () => {
           <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-blue-500"></span> En proceso ({stats.enProceso})</div>
           <div className="flex items-center gap-1.5 text-[0.7rem] font-bold text-slate-500"><span className="w-2 h-2 rounded-full bg-green-500"></span> Resuelto ({stats.resueltos})</div>
         </div>
+
+        {isResponsable && (
+          <div className="mt-6 border-t border-slate-100 pt-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-slate-800">Mis áreas</h3>
+              <span className="text-xs font-medium text-slate-400">
+                {user?.areas?.length ?? 0} asignada{(user?.areas?.length ?? 0) === 1 ? '' : 's'}
+              </span>
+            </div>
+            {user?.areas && user.areas.length > 0 ? (
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {user.areas.map((area) => (
+                  <div key={area.id} className="flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/60 px-3 py-3">
+                    <MapPin size={16} className="mt-0.5 shrink-0 text-emerald-700" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-slate-700">{area.nombre}</p>
+                      {(area.sede?.nombre || area.ubicacion) && (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {[area.sede?.nombre, area.ubicacion].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                No tienes áreas activas asignadas. Solicita la asignación al Subdirector Administrativo.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 4. REPORTES RECIENTES */}

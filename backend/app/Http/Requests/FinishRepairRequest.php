@@ -33,8 +33,8 @@ class FinishRepairRequest extends FormRequest
         ];
 
         return [
-            'proceso_reparacion' => ['required', 'string', 'max:10000'],
-            'estado_final' => ['required', 'string', 'max:5000'],
+            'proceso_reparacion' => ['required', 'string', 'min:5', 'max:10000'],
+            'estado_final' => ['required', 'string', 'min:5', 'max:5000'],
             'evidencia_inicial' => $imageRules,
             'evidencia_durante' => $imageRules,
             'evidencia_final' => $imageRules,

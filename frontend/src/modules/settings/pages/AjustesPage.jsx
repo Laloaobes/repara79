@@ -197,6 +197,8 @@ const EditProfileModal = ({ user, isSaving, error, onCancel, onSave }) => {
               <input
                 type="text"
                 name="name"
+                minLength={3}
+                maxLength={255}
                 defaultValue={user?.name || ''}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700"
                 required
@@ -210,6 +212,7 @@ const EditProfileModal = ({ user, isSaving, error, onCancel, onSave }) => {
               <input
                 type="email"
                 name="email"
+                maxLength={255}
                 defaultValue={user?.email || ''}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700"
                 required
@@ -223,6 +226,9 @@ const EditProfileModal = ({ user, isSaving, error, onCancel, onSave }) => {
               <input
                 type="tel"
                 name="telefono"
+                minLength={7}
+                maxLength={20}
+                pattern="[0-9+()\-\s]{7,20}"
                 defaultValue={user?.telefono || ''}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#52b788] focus:border-transparent outline-none transition-all text-sm font-medium text-slate-700"
               />

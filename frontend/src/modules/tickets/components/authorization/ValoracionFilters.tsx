@@ -21,6 +21,7 @@ const ValoracionFilters = ({
       <span className="sr-only">Buscar valoración por folio o título</span>
       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
       <input
+        maxLength={150}
         type="search"
         value={filters.search || ''}
         onChange={(event) => onChange({ ...filters, search: event.target.value })}

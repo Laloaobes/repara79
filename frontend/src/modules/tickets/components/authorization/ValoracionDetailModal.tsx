@@ -211,7 +211,7 @@ const ValoracionDetailModal = ({
                 <button
                   type="button"
                   onClick={() => mode === 'authorize' ? onAutorizar() : onRechazar(reason.trim())}
-                  disabled={isProcessing || (mode === 'reject' && !reason.trim())}
+                  disabled={isProcessing || (mode === 'reject' && reason.trim().length < 5)}
                   className={`flex-1 py-3 text-white rounded-xl font-bold disabled:opacity-60 ${
                     mode === 'authorize' ? 'bg-[#163d2a]' : 'bg-red-600'
                   }`}

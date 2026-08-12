@@ -18,6 +18,7 @@ export const validateMaterialRows = (rows: MaterialRowDraft[]): string | null =>
 
   for (const [index, row] of rows.entries()) {
     if (!row.descripcion.trim()) return `El material ${index + 1} requiere descripción.`;
+    if (row.descripcion.trim().length < 2) return `La descripción del material ${index + 1} debe tener al menos 2 caracteres.`;
     if (!/^\d+$/.test(row.cantidad) || Number(row.cantidad) < 1 || Number(row.cantidad) > 1000000) {
       return `La cantidad del material ${index + 1} debe ser un entero entre 1 y 1,000,000.`;
     }
@@ -56,6 +57,11 @@ const ValuationForm = ({ ticketId, onSuccess }: ValuationFormProps) => {
 
     if (!observaciones.trim()) {
       setError('Las observaciones son obligatorias.');
+      return;
+    }
+
+    if (observaciones.trim().length < 5) {
+      setError('Las observaciones deben tener al menos 5 caracteres.');
       return;
     }
 
@@ -128,6 +134,7 @@ const ValuationForm = ({ ticketId, onSuccess }: ValuationFormProps) => {
           <textarea
             id="observaciones-valoracion"
             rows={5}
+            minLength={5}
             maxLength={5000}
             required
             value={observaciones}
