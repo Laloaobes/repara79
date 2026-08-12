@@ -1,4 +1,5 @@
 import apiClient from '../../../api/axios';
+import { AxiosProgressEvent } from 'axios';
 import { Ticket } from '../../tickets/services/ticketsService';
 
 export interface RepairEvidence {
@@ -43,8 +44,10 @@ export interface FinishRepairPayload {
 }
 
 const repairsService = {
-  async getTray(): Promise<RepairTray> {
-    const response = await apiClient.get('/reparaciones');
+  async getTray(search = ''): Promise<RepairTray> {
+    const response = await apiClient.get('/reparaciones', {
+      params: { search: search || undefined },
+    });
     return response.data.data;
   },
 
@@ -55,7 +58,11 @@ const repairsService = {
     return response.data.data;
   },
 
-  async finish(repairId: number, payload: FinishRepairPayload): Promise<Repair> {
+  async finish(
+    repairId: number,
+    payload: FinishRepairPayload,
+    onProgress?: (progress: number) => void,
+  ): Promise<Repair> {
     const body = new FormData();
     body.append('proceso_reparacion', payload.proceso_reparacion);
     body.append('estado_final', payload.estado_final);
@@ -65,6 +72,9 @@ const repairsService = {
 
     const response = await apiClient.post(`/reparaciones/${repairId}/finalizar`, body, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: (event: AxiosProgressEvent) => {
+        if (event.total && onProgress) onProgress(Math.round((event.loaded * 100) / event.total));
+      },
     });
     return response.data.data;
   },

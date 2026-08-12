@@ -16,6 +16,7 @@ import { AuthProvider } from './modules/auth/context/AuthContext';
 import { ROLES } from './constants/roles';
 import RepairsPage from './modules/repairs/pages/RepairsPage';
 import RepairArchivePage from './modules/repairs/pages/RepairArchivePage';
+import RepairArchiveDetailPage from './modules/repairs/pages/RepairArchiveDetailPage';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
 
               <Route element={<ProtectedRoute allowedRoles={[ROLES.PERSONAL_MANTENIMIENTO, ROLES.SUBDIRECTOR_ADMINISTRATIVO, ROLES.RESPONSABLE_DEL_LUGAR]} />}>
                 <Route path="archivero-reparaciones" element={<RepairArchivePage />} />
+                <Route path="archivero-reparaciones/:id" element={<RepairArchiveDetailPage />} />
               </Route>
 
               {/* Exclusivas de "Subdirector Administrativo" */}

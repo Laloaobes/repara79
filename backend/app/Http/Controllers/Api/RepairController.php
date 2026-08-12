@@ -9,12 +9,19 @@ use App\Http\Resources\RepairResource;
 use App\Models\Reparacion;
 use App\Models\Ticket;
 use App\Services\RepairService;
+use Illuminate\Http\Request;
 
 class RepairController extends Controller
 {
-    public function index(RepairService $service)
+    public function index(Request $request, RepairService $service)
     {
-        $tray = $service->tray(request()->user());
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:150'],
+        ]);
+        $tray = $service->tray(
+            $request->user(),
+            trim((string) ($validated['search'] ?? ''))
+        );
 
         return response()->json([
             'success' => true,

@@ -47,12 +47,22 @@ npm run build
 
 La generación del PDF usa una dependencia incluida por Composer y no requiere ejecutar un servicio adicional. JPG y PNG pueden incrustarse directamente; para incrustar evidencias WebP, el PHP del servidor debe tener habilitada la extensión GD con soporte WebP. Esta verificación debe formar parte de la preparación del despliegue (`php -m` y `gd_info()`). No se añadió conversión automática de imágenes.
 
-## Trabajo reservado para refinamiento del equipo
+## Refinamiento incorporado posteriormente
 
-- Actualización en tiempo real con Reverb/Echo; la versión actual persiste y consulta notificaciones por REST.
-- Filtros, paginación interactiva y detalle dedicado más completos en el archivero.
-- Diseño institucional definitivo, firma, branding y pruebas visuales del PDF.
-- UX avanzada de carga: vistas previas, progreso, compresión o conversión a WebP.
+- Notificaciones instantáneas con Reverb, canal privado Sanctum y Echo; REST
+  permanece como degradación segura.
+- Búsqueda de reparaciones por folio, título, descripción o ubicación.
+- Estado inicial precargado y editable a partir del reporte original.
+- Validación local, vistas previas y progreso de carga para las tres evidencias.
+- Paginación y detalle dedicado del Archivero Digital.
+- Informe PDF con identidad REPARA-79, identificador documental, responsables,
+  fechas, materiales en MXN, evidencias y espacio de conformidad.
+
+## Trabajo todavía reservado para refinamiento del equipo
+
+- Compresión o conversión automática de imágenes a WebP.
+- Sustitución del identificador visual propio de REPARA-79 por un logotipo
+  institucional, únicamente cuando el plantel entregue un recurso aprobado.
 - Pruebas automatizadas del frontend y ampliación de escenarios de accesibilidad.
 - Observabilidad, reintentos de notificación y endurecimiento específico del servidor de producción.
 

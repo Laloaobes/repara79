@@ -70,6 +70,7 @@ class Valoracion extends Model
             ->map(fn (MaterialTicket $material) => [
                 'id' => $material->id,
                 'descripcion' => $material->nombre_material,
+                'codigo' => $material->codigo_material,
                 'cantidad' => (int) $material->cantidad,
                 'costo_unitario' => DecimalMoney::format($material->costo_unitario),
                 'subtotal' => DecimalMoney::formatCents(
