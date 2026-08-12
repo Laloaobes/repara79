@@ -108,8 +108,9 @@ Este documento conserva las decisiones que deben aplicar las épicas refinadas y
 - Administración no crea usuarios ni administra contraseñas durante el MVP.
 - El registro existente crea las cuentas como `Usuario Registrado`.
 - Las cuentas pueden activarse o desactivarse; desactivar revoca sus tokens.
-- Un área puede tener varios Responsables del Lugar activos.
+- Un área solo puede tener un Responsable del Lugar activo.
 - Un Responsable del Lugar puede pertenecer a varias áreas.
+- Asignar el rol Responsable del Lugar requiere al menos un área disponible.
 - `usuario_area` es la fuente oficial de las asignaciones.
 - Cambiar una cuenta fuera de Responsable del Lugar desactiva sus asignaciones.
 - Sedes, áreas, tipos de desperfectos y prioridades permiten creación y edición.

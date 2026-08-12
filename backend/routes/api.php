@@ -53,6 +53,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::post('/valoraciones/{valoracion}/rechazar', [ValoracionController::class, 'rechazar']);
 
         Route::get('/usuarios', [UserController::class, 'index']);
+        Route::get('/usuarios/areas-disponibles', [UserController::class, 'areas']);
         Route::get('/usuarios/{usuario}', [UserController::class, 'show']);
         Route::put('/usuarios/{usuario}', [UserController::class, 'update']);
         Route::put('/usuarios/{usuario}/rol', [UserController::class, 'updateRole']);

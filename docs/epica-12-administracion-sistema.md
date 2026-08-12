@@ -19,7 +19,7 @@ Al terminar la épica:
 
 1. El Subdirector Administrativo consulta cuentas con búsqueda, filtros y paginación.
 2. Puede cambiar el rol o estado activo de otra cuenta bajo reglas de seguridad.
-3. Puede asignar uno o varios Responsables del Lugar a distintas áreas.
+3. Puede asignar una o varias áreas disponibles a cada Responsable del Lugar.
 4. Las cuentas inactivas no pueden iniciar sesión ni continuar usando tokens existentes.
 5. Puede crear y editar sedes, áreas, tipos de desperfectos y prioridades.
 6. Los estados del ticket y roles oficiales se muestran como referencia, pero no se editan.
@@ -34,7 +34,7 @@ Al terminar la épica:
 - Activación y desactivación de cuentas.
 - Revocación de tokens al desactivar.
 - Protección contra pérdida del último Subdirector Administrativo activo.
-- Asignación múltiple de Responsables del Lugar a áreas.
+- Asignación de varias áreas a un Responsable del Lugar, con un único responsable activo por área.
 - Creación y edición de sedes.
 - Creación y edición de áreas.
 - Creación y edición de tipos de desperfectos.
@@ -62,8 +62,9 @@ Al terminar la épica:
 - Pueden existir varios Subdirectores Administrativos activos. ÉPICA 11 notifica a todos.
 - Siempre debe permanecer al menos uno activo.
 - Un Subdirector Administrativo no puede cambiar su propio rol ni desactivar su propia cuenta.
-- Un área puede tener varios Responsables del Lugar activos.
+- Un área solo puede tener un Responsable del Lugar activo.
 - Un Responsable del Lugar puede estar asignado a varias áreas.
+- Al establecer el rol `Responsable del Lugar` es obligatorio asignar al menos un área disponible.
 - `usuario_area` es la fuente oficial de esas asignaciones; no se agrega `responsable_id` a `areas`.
 - `estados_ticket` es un catálogo controlado por el flujo y permanece de solo lectura.
 - `tipos_usuarios` también permanece de solo lectura para conservar los cuatro nombres oficiales.
@@ -128,7 +129,7 @@ Colores permitidos para prioridades durante el MVP:
 | Desactivar                        | No puede ser la propia cuenta ni dejar cero Subdirectores Administrativos activos.     |
 | Reactivar                         | No reactiva automáticamente asignaciones de área anteriores.                           |
 | Cambiar fuera de Responsable      | Desactiva sus relaciones activas en `usuario_area`.                                    |
-| Asignar áreas                     | Solo a usuarios activos con rol `Responsable del Lugar`.                               |
+| Asignar áreas                     | Solo a Responsables activos, al menos una y sin otro responsable activo.               |
 | Eliminar                          | No existe eliminación de usuarios en esta épica.                                       |
 | Administrar contraseña            | Fuera del alcance.                                                                     |
 
@@ -145,6 +146,7 @@ La épica debe auditar el esquema antes de endurecerlo:
 - `sedes.nombre` debe ser único.
 - La combinación `areas(sede_id, nombre)` debe ser única.
 - `usuario_area(usuario_id, area_id)` conserva su unicidad actual.
+- Un índice único parcial sobre `usuario_area(area_id)` impide más de una asignación activa por área.
 
 Si existen usuarios sin rol, áreas sin sede o nombres duplicados, la migración se detiene y exige corrección explícita. No se reasignan ni eliminan datos silenciosamente.
 
@@ -258,7 +260,7 @@ No crea tablas administrativas o de auditoría.
 ## Subtareas
 
 1. **Definir seguridad de cuentas** — Establecer rol propio, último Subdirector, activación, revocación de tokens y middleware de usuario activo.
-2. **Definir asignaciones de área** — Confirmar cardinalidad múltiple, rol requerido, activación del pivote y efectos de cambiar rol.
+2. **Definir asignaciones de área** — Confirmar varias áreas por responsable, exclusividad por área, rol requerido, activación del pivote y efectos de cambiar rol.
 3. **Delimitar catálogos administrables** — Identificar altas, ediciones, catálogos de solo lectura y prohibición de eliminación.
 4. **Formalizar API e integridad** — Documentar rutas, DTO, migraciones, auditorías, paginación, errores y dependencias con ÉPICA 11.
 
@@ -267,7 +269,7 @@ No crea tablas administrativas o de auditoría.
 1. El contrato enumera operaciones permitidas y excluidas.
 2. Utiliza los cuatro nombres oficiales de roles.
 3. Permite varios Subdirectores y conserva al menos uno activo.
-4. Permite varios Responsables por área y varias áreas por Responsable.
+4. Permite varias áreas por Responsable y un único Responsable activo por área.
 5. Estados y roles permanecen de solo lectura.
 6. Está definido el comportamiento de una cuenta inactiva y sus tokens.
 7. No existen rutas de eliminación.
@@ -375,7 +377,7 @@ Las rutas se agrupan bajo `/api/admin`, `auth:sanctum`, middleware de cuenta act
 7. Una cuenta inactiva no inicia sesión.
 8. Al desactivar se revocan sus tokens y deja de acceder con tokens anteriores.
 9. Solo un Responsable del Lugar activo puede recibir asignaciones.
-10. Un Responsable puede tener varias áreas y un área varios Responsables.
+10. Un Responsable puede tener varias áreas y cada área solo un Responsable activo.
 11. Cambiar fuera de Responsable desactiva sus asignaciones.
 12. Reactivar o devolver el rol no reactiva áreas automáticamente.
 13. Un fallo revierte rol, estado y asignaciones relacionadas.
@@ -396,6 +398,7 @@ Las rutas se agrupan bajo `/api/admin`, `auth:sanctum`, middleware de cuenta act
 - Al menos un Subdirector debe permanecer activo.
 - Una cuenta inactiva no usa la API.
 - Solo Responsable del Lugar activo tiene áreas activas.
+- El rol Responsable del Lugar exige al menos un área, y solo se ofrecen áreas libres o ya asignadas a esa misma cuenta.
 - Asignaciones omitidas se desactivan y no se borran.
 - Cambios sensibles usan transacción y bloqueo cuando corresponda.
 
@@ -776,7 +779,7 @@ No modifican el esquema productivo.
 3. Se prueban automodificación y último Subdirector activo.
 4. Una cuenta inactiva no inicia ni continúa sesión.
 5. Los tokens se revocan al desactivar.
-6. Se prueban varias áreas por Responsable y varios Responsables por área.
+6. Se prueban varias áreas por Responsable y se rechaza un segundo Responsable activo para la misma área.
 7. Cambiar el rol desactiva asignaciones correspondientes.
 8. ÉPICA 11 selecciona destinatarios según la nueva configuración.
 9. Se prueban duplicados y relaciones obligatorias.

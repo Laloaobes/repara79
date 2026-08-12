@@ -370,8 +370,9 @@ notifications + REST + Reverb
 - El registro crea cuentas como `Usuario Registrado`.
 - Las cuentas pueden activarse o desactivarse.
 - Desactivar revoca tokens.
-- Un área puede tener varios Responsables del Lugar.
+- Un área solo puede tener un Responsable del Lugar activo.
 - Un Responsable del Lugar puede pertenecer a varias áreas.
+- Asignar el rol Responsable del Lugar requiere al menos un área disponible.
 - `usuario_area` es la fuente oficial.
 - Si una cuenta deja de ser Responsable del Lugar, sus asignaciones activas se desactivan.
 - Sedes, áreas, tipos de desperfectos y prioridades permiten creación y edición.
