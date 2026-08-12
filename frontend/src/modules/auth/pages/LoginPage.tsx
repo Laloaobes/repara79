@@ -14,6 +14,7 @@ import { login, register } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import SystemAlert from '../../../components/SystemAlert';
+import { beginSessionTracking, consumeSessionNotice } from '../session/sessionManager';
 
 
 
@@ -22,7 +23,7 @@ const LoginPage = () => {
   // Estados para controlar la UI
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(() => consumeSessionNotice());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
@@ -63,6 +64,7 @@ const LoginPage = () => {
         );
 
         localStorage.setItem("auth_token", response.token);
+        beginSessionTracking();
 
         await refreshUser();
 
@@ -88,6 +90,7 @@ const LoginPage = () => {
         );
 
         localStorage.setItem("auth_token", response.token);
+        beginSessionTracking();
 
         await refreshUser();
 

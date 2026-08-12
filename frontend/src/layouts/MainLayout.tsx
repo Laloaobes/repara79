@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,7 +9,6 @@ import {
   Settings,
   Plus,
   LogOut,
-  Search,
   Menu,
   X,
   GraduationCap
@@ -18,6 +17,7 @@ import NewTicketModal from '../modules/tickets/components/NewTicketModal';
 import { useAuth } from '../modules/auth/context/AuthContext';
 import { ROLES, Role } from '../constants/roles';
 import NotificationMenu from '../modules/notifications/components/NotificationMenu';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const getInitials = (name: string) => {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -103,6 +103,8 @@ const MainLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
+  const mobileCloseRef = useRef<HTMLButtonElement>(null);
   const { user: currentUser, role, logoutUser } = useAuth();
 
   const navigate = useNavigate();
@@ -113,6 +115,13 @@ const MainLayout = () => {
   );
 
   const canReportTicket = !!role && ROLES_QUE_REPORTAN.includes(role as Role);
+
+  useFocusTrap({
+    active: mobileMenuOpen,
+    containerRef: mobileDrawerRef,
+    initialFocusRef: mobileCloseRef,
+    onEscape: () => setMobileMenuOpen(false),
+  });
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -128,6 +137,7 @@ const MainLayout = () => {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 font-sans">
+      <a href="#contenido-principal" className="skip-link">Saltar al contenido principal</a>
 
       {/* Modal global desencadenado por el Sidebar/BottomNav */}
       <NewTicketModal
@@ -153,7 +163,7 @@ const MainLayout = () => {
           <div className="h-px w-full bg-white/10" />
         </div>
 
-        <nav className="flex-1 px-4 flex flex-col gap-2">
+        <nav aria-label="Navegación principal" className="flex-1 px-4 flex flex-col gap-2">
           <p className="text-[0.65rem] text-[#e8f5ee]/40 uppercase tracking-widest px-3 mb-2 font-bold">Menú Principal</p>
           {navItems.map((item) => (
             <NavLink
@@ -211,7 +221,7 @@ const MainLayout = () => {
       <div className="flex-1 flex flex-col min-w-0 h-full relative">
         <header className="h-[72px] bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 shrink-0 shadow-sm z-10">
           <div className="flex items-center gap-3 md:hidden">
-            <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-xl">
+            <button onClick={() => setMobileMenuOpen(true)} aria-label="Abrir menú principal" aria-expanded={mobileMenuOpen} aria-controls="menu-movil" className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-xl">
               <Menu size={24} />
             </button>
             <div className="flex flex-col">
@@ -226,10 +236,6 @@ const MainLayout = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            <button className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-xl">
-              <Search size={20} />
-            </button>
-
             <NotificationMenu />
 
             <div className="hidden md:flex w-9 h-9 rounded-full bg-gradient-to-br from-[#52b788] to-[#2d6a4f] items-center justify-center font-bold text-white text-sm shadow-sm cursor-pointer border-2 border-green-100">
@@ -238,7 +244,7 @@ const MainLayout = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-[#f8fafc] pb-24 md:pb-8">
+        <main id="contenido-principal" tabIndex={-1} className="flex-1 overflow-y-auto bg-[#f8fafc] pb-24 md:pb-8">
           <Outlet />
         </main>
       </div>
@@ -248,9 +254,9 @@ const MainLayout = () => {
       ========================================= */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" aria-hidden="true" onClick={() => setMobileMenuOpen(false)} />
 
-          <div className="w-[280px] h-full bg-[#163d2a] text-white flex flex-col relative shadow-2xl z-10 animate-in slide-in-from-left-4 duration-200">
+          <div ref={mobileDrawerRef} id="menu-movil" role="dialog" aria-modal="true" aria-label="Menú principal" tabIndex={-1} className="w-[280px] h-full bg-[#163d2a] text-white flex flex-col relative shadow-2xl z-10 animate-in slide-in-from-left-4 duration-200">
             <div className="p-5 flex items-center justify-between border-b border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#52b788] flex items-center justify-center"><GraduationCap size={18} /></div>
@@ -259,7 +265,7 @@ const MainLayout = () => {
                   <p className="text-[0.55rem] text-white/50 uppercase">CBTa Zinacantepec</p>
                 </div>
               </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-1 text-white/50 hover:text-white"><X size={20}/></button>
+              <button ref={mobileCloseRef} onClick={() => setMobileMenuOpen(false)} aria-label="Cerrar menú principal" className="p-1 text-white/50 hover:text-white"><X size={20}/></button>
             </div>
 
             <div className="p-5 border-b border-white/10 flex items-center gap-3">
@@ -270,7 +276,7 @@ const MainLayout = () => {
               </div>
             </div>
 
-            <nav className="flex-1 p-4 flex flex-col gap-2">
+            <nav aria-label="Navegación principal móvil" className="flex-1 p-4 flex flex-col gap-2">
               {navItems.map((item) => (
                 <NavLink
                   key={item.id}
@@ -310,7 +316,7 @@ const MainLayout = () => {
       {/* =========================================
           BOTTOM NAV MÓVIL
       ========================================= */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-between px-2 pb-safe pt-1 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <nav aria-label="Navegación inferior" className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-between px-2 pb-safe pt-1 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         {navItems.map((item) => (
           <NavLink
             key={item.id}

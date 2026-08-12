@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { ImagePlus, X } from 'lucide-react';
 import ticketsService, { TicketCatalogs } from '../services/ticketsService';
 import SystemAlert from '../../../components/SystemAlert';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
 const maxImageBytes = 5 * 1024 * 1024;
@@ -19,6 +20,8 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
   const [message, setMessage] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -73,6 +76,13 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
     onClose();
   };
 
+  useFocusTrap({
+    active: isOpen,
+    containerRef: dialogRef,
+    initialFocusRef: closeButtonRef,
+    onEscape: closeModal,
+  });
+
   // Prevenir renderizado si no está abierto
   if (!isOpen) return null;
 
@@ -125,6 +135,11 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
       
       {/* Modal Content (Detiene la propagación del clic para que no se cierre al hacer clic adentro) */}
       <div 
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="nuevo-reporte-titulo"
+        tabIndex={-1}
         className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200" 
         onClick={e => e.stopPropagation()}
       >
@@ -132,13 +147,15 @@ const NewTicketModal = ({ isOpen, onClose, onCreated }: NewTicketModalProps) => 
         {/* Header Fijo */}
         <div className="flex items-center justify-between p-6 md:p-8 border-b border-slate-100 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Nuevo Reporte</h2>
+            <h2 id="nuevo-reporte-titulo" className="text-xl font-bold text-slate-800 tracking-tight">Nuevo Reporte</h2>
             <p className="text-xs text-slate-500 mt-1 font-medium">Registrar incidencia de mantenimiento</p>
           </div>
           <button 
+            ref={closeButtonRef}
             type="button"
             onClick={closeModal}
             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            aria-label="Cerrar formulario de nuevo reporte"
           >
             <X size={20} />
           </button>

@@ -101,15 +101,20 @@ En Railway:
 ```env
 ALLOW_PUBLIC_REGISTRATION=false
 LOGIN_ATTEMPTS_PER_MINUTE=5
+SANCTUM_EXPIRATION=480
 ```
 
 En Vercel:
 
 ```env
 VITE_ALLOW_PUBLIC_REGISTRATION=false
+VITE_SESSION_IDLE_MINUTES=30
+VITE_SESSION_MAX_HOURS=8
 ```
 
 Estas dos variables cumplen funciones distintas: Vercel oculta la interfaz y Railway bloquea realmente el endpoint. Las rutas funcionales permanecen protegidas por Sanctum y las cuentas inactivas son rechazadas incluso si conservan un token anterior.
+
+La sesión se cierra en la interfaz después de 30 minutos sin interacción y alcanza una vigencia máxima de 8 horas. Railway también rechaza tokens con más de 480 minutos, de modo que alterar o desactivar la lógica del navegador no permite conservar indefinidamente el acceso.
 
 Para limitar la visualización del frontend, usar un Preview Deployment con Vercel Deployment Protection. La dirección Railway sigue siendo técnicamente pública, pero no permite registro y no expone operaciones sin un token válido.
 

@@ -1,6 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { me as fetchMe, logout as logoutRequest } from '../services/authService';
 import { disconnectEcho } from '../../../realtime/echo';
+import {
+  clearLocalSession,
+  ensureSessionTracking,
+  getExpirationReason,
+  storeSessionNotice,
+  touchSession,
+  type SessionExpirationReason,
+} from '../session/sessionManager';
 
 export interface AuthUser {
   id: number;
@@ -35,11 +43,6 @@ const getStoredUser = (): AuthUser | null => {
   }
 };
 
-const clearLocalSession = () => {
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('user_data');
-};
-
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -68,6 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
+    ensureSessionTracking();
     refreshUser().finally(() => setIsLoading(false));
   }, [refreshUser]);
 
@@ -82,6 +86,75 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       clearLocalSession();
     }
   }, []);
+
+  const expireSession = useCallback(async (reason: SessionExpirationReason) => {
+    try {
+      await logoutRequest();
+    } catch {
+      // Un token vencido o una API desconectada no debe impedir el cierre local.
+    } finally {
+      storeSessionNotice(reason);
+      disconnectEcho();
+      clearLocalSession();
+      setUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user || !localStorage.getItem('auth_token')) return;
+
+    let lastTrackedActivity = 0;
+    let expiring = false;
+
+    const checkExpiration = () => {
+      const reason = getExpirationReason();
+      if (reason && !expiring) {
+        expiring = true;
+        void expireSession(reason);
+      }
+      return reason;
+    };
+
+    const registerActivity = () => {
+      if (checkExpiration()) return;
+      const now = Date.now();
+      if (now - lastTrackedActivity >= 15_000) {
+        lastTrackedActivity = now;
+        touchSession();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') checkExpiration();
+    };
+    const handleInvalidSession = () => {
+      disconnectEcho();
+      setUser(null);
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'auth_token' && event.newValue === null) {
+        storeSessionNotice('invalid');
+        disconnectEcho();
+        setUser(null);
+      }
+    };
+
+    const activityEvents: Array<keyof WindowEventMap> = ['keydown', 'pointerdown', 'touchstart'];
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, registerActivity, { passive: true }));
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('auth:session-invalid', handleInvalidSession);
+    window.addEventListener('storage', handleStorage);
+    const interval = window.setInterval(checkExpiration, 30_000);
+    checkExpiration();
+
+    return () => {
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, registerActivity));
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('auth:session-invalid', handleInvalidSession);
+      window.removeEventListener('storage', handleStorage);
+      window.clearInterval(interval);
+    };
+  }, [user, expireSession]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

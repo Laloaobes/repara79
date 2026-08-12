@@ -1,4 +1,8 @@
 import axios from 'axios';
+import {
+  clearLocalSession,
+  storeSessionNotice,
+} from '../modules/auth/session/sessionManager';
 
 /**
  * Instancia global de Axios configurada para consumir el backend en Laravel.
@@ -42,13 +46,11 @@ apiClient.interceptors.response.use(
     // Manejo global de errores de producción
     if (error.response) {
       // Error 401: No autorizado (Token expirado o inválido)
-      if (error.response.status === 401) {
+      if (error.response.status === 401 && error.config?.url !== '/login') {
         console.warn('Sesión expirada o no autorizada. Redirigiendo al login...');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
-        
-        // Redirección forzada segura sin usar hooks de React
-        window.location.href = '/login';
+        storeSessionNotice('invalid');
+        clearLocalSession();
+        window.dispatchEvent(new CustomEvent('auth:session-invalid'));
       }
       
       // Error 403: Prohibido (No tiene permisos de Laravel para esa acción)

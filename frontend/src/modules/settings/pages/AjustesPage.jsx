@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile } from '../../auth/services/authService';
 import { useAuth } from '../../auth/context/AuthContext';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 const getInitials = (name) => {
   const words = (name || '').trim().split(/\s+/).filter(Boolean);
@@ -160,6 +161,16 @@ const AjustesPage = () => {
 };
 
 const EditProfileModal = ({ user, isSaving, error, onCancel, onSave }) => {
+  const dialogRef = useRef(null);
+  const cancelButtonRef = useRef(null);
+
+  useFocusTrap({
+    active: true,
+    containerRef: dialogRef,
+    initialFocusRef: cancelButtonRef,
+    onEscape: () => { if (!isSaving) onCancel(); },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -175,15 +186,20 @@ const EditProfileModal = ({ user, isSaving, error, onCancel, onSave }) => {
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
-      onClick={onCancel}
+      onClick={() => { if (!isSaving) onCancel(); }}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="editar-perfil-titulo"
+        tabIndex={-1}
         className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Editar perfil</h2>
+            <h2 id="editar-perfil-titulo" className="text-xl font-bold text-slate-800 tracking-tight">Editar perfil</h2>
             <p className="text-xs text-slate-500 mt-1 font-medium">Actualiza tus datos de cuenta</p>
           </div>
         </div>
@@ -244,8 +260,10 @@ const EditProfileModal = ({ user, isSaving, error, onCancel, onSave }) => {
 
         <div className="p-4 border-t border-slate-100 flex gap-3 shrink-0 bg-slate-50/50 rounded-b-[2rem]">
           <button
+            ref={cancelButtonRef}
             type="button"
             onClick={onCancel}
+            disabled={isSaving}
             className="flex-1 py-3.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors text-sm"
           >
             Cancelar

@@ -62,6 +62,25 @@ class DeploymentReadinessTest extends TestCase
             ->assertJsonPath('message', 'La cuenta se encuentra inactiva.');
     }
 
+    public function test_personal_access_tokens_expire_after_configured_lifetime(): void
+    {
+        config(['sanctum.expiration' => 1]);
+        $roleId = TipoUsuario::query()->where('nombre', 'Usuario Registrado')->value('id');
+        $user = User::factory()->create([
+            'tipo_usuario_id' => $roleId,
+            'activo' => true,
+        ]);
+        $token = $user->createToken('expiration-test')->plainTextToken;
+        $this->assertDatabaseHas('personal_access_tokens', [
+            'tokenable_id' => $user->id,
+            'name' => 'expiration-test',
+        ]);
+
+        $this->travel(2)->minutes();
+
+        $this->withToken($token)->getJson('/api/me')->assertUnauthorized();
+    }
+
     public function test_login_is_rate_limited_by_identity_and_ip(): void
     {
         $email = 'limitado@example.test';
