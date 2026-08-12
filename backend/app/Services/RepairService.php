@@ -23,19 +23,44 @@ class RepairService
         private readonly RepairFinishedNotificationService $notificationService,
     ) {}
 
-    public function tray(User $user): array
+    public function tray(User $user, string $search = ''): array
     {
-        $available = Ticket::query()
+        $availableQuery = Ticket::query()
             ->with(['estado', 'area.sede', 'prioridad', 'valoracion.materialesTicket'])
             ->whereHas('estado', fn ($query) => $query->where('nombre', 'Autorizado'))
-            ->whereDoesntHave('reparacion')
+            ->whereDoesntHave('reparacion');
+
+        $inProgressQuery = Reparacion::query()
+            ->with(['ticket.estado', 'ticket.area.sede', 'ticket.prioridad', 'responsable', 'evidencias', 'bitacora'])
+            ->where('realizado_por', $user->id)
+            ->whereNull('fecha_reparacion');
+
+        if ($search !== '') {
+            $folioId = preg_match('/^(?:TK-)?0*(\d+)$/i', $search, $matches)
+                ? (int) $matches[1]
+                : null;
+
+            $ticketSearch = function ($query) use ($search, $folioId): void {
+                $query->where(function ($ticketQuery) use ($search, $folioId): void {
+                    $ticketQuery->whereLike('titulo', "%{$search}%")
+                        ->orWhereLike('descripcion_desperfecto', "%{$search}%")
+                        ->orWhereLike('ubicacion', "%{$search}%");
+
+                    if ($folioId !== null) {
+                        $ticketQuery->orWhere($ticketQuery->getModel()->getQualifiedKeyName(), $folioId);
+                    }
+                });
+            };
+
+            $availableQuery->where($ticketSearch);
+            $inProgressQuery->whereHas('ticket', $ticketSearch);
+        }
+
+        $available = $availableQuery
             ->orderBy('created_at')
             ->get();
 
-        $inProgress = Reparacion::query()
-            ->with(['ticket.estado', 'ticket.area.sede', 'ticket.prioridad', 'responsable', 'evidencias', 'bitacora'])
-            ->where('realizado_por', $user->id)
-            ->whereNull('fecha_reparacion')
+        $inProgress = $inProgressQuery
             ->orderByDesc('fecha_inicio')
             ->get();
 

@@ -19,9 +19,26 @@ export interface RepairArchive {
   };
 }
 
+export interface ArchivePage {
+  items: RepairArchive[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
 const archivesService = {
-  async getAll(search = ''): Promise<RepairArchive[]> {
-    const response = await apiClient.get('/bitacoras-reparacion', { params: { search: search || undefined } });
+  async getAll(search = '', page = 1): Promise<ArchivePage> {
+    const response = await apiClient.get('/bitacoras-reparacion', {
+      params: { search: search || undefined, page },
+    });
+    return { items: response.data.data, meta: response.data.meta };
+  },
+
+  async getById(id: number): Promise<RepairArchive> {
+    const response = await apiClient.get(`/bitacoras-reparacion/${id}`);
     return response.data.data;
   },
 

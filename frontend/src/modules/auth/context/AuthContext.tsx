@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { me as fetchMe, logout as logoutRequest } from '../services/authService';
+import { disconnectEcho } from '../../../realtime/echo';
 
 export interface AuthUser {
   id: number;
@@ -70,6 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('No fue posible cerrar sesion en el backend:', error);
     } finally {
+      disconnectEcho();
       setUser(null);
       clearLocalSession();
     }
