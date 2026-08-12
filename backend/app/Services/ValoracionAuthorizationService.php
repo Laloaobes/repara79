@@ -7,18 +7,30 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Valoracion;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ValoracionAuthorizationService
 {
+    public function __construct(
+        private readonly ValoracionNotificationService $notifications,
+    ) {}
+
     public function autorizar(Valoracion $valoracion, User $reviewer): Valoracion
     {
-        return $this->decide($valoracion, $reviewer, true);
+        $updated = $this->decide($valoracion, $reviewer, true);
+        $this->notifySafely($updated, true);
+
+        return $updated;
     }
 
     public function rechazar(Valoracion $valoracion, User $reviewer, string $reason): Valoracion
     {
-        return $this->decide($valoracion, $reviewer, false, $reason);
+        $updated = $this->decide($valoracion, $reviewer, false, $reason);
+        $this->notifySafely($updated, false);
+
+        return $updated;
     }
 
     private function decide(
@@ -101,5 +113,18 @@ class ValoracionAuthorizationService
         }
 
         return $state;
+    }
+
+    private function notifySafely(Valoracion $valoracion, bool $authorized): void
+    {
+        try {
+            $this->notifications->notifyDecision($valoracion, $authorized);
+        } catch (Throwable $notificationError) {
+            Log::error('No fue posible persistir la notificación de la decisión administrativa.', [
+                'valoracion_id' => $valoracion->id,
+                'authorized' => $authorized,
+                'error' => $notificationError->getMessage(),
+            ]);
+        }
     }
 }

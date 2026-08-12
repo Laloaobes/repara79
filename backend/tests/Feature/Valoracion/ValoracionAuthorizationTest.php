@@ -2,8 +2,12 @@
 
 namespace Tests\Feature\Valoracion;
 
+use App\Events\UserNotificationCreated;
 use App\Models\Area;
 use App\Models\EstadoTicket;
+use App\Services\ValoracionNotificationService;
+use Illuminate\Broadcasting\BroadcastException;
+use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;
 
 class ValoracionAuthorizationTest extends ValoracionTestCase
@@ -97,9 +101,11 @@ class ValoracionAuthorizationTest extends ValoracionTestCase
 
     public function test_authorization_changes_both_states_and_records_reviewer_atomically(): void
     {
+        Event::fake([UserNotificationCreated::class]);
         $admin = $this->userWithRole('Subdirector Administrativo');
+        $maintenance = $this->userWithRole('Personal de Mantenimiento');
         $valoracion = $this->valoracion(
-            $this->userWithRole('Personal de Mantenimiento'),
+            $maintenance,
             $this->ticket()
         );
         Sanctum::actingAs($admin);
@@ -118,13 +124,21 @@ class ValoracionAuthorizationTest extends ValoracionTestCase
             'veces_revisada' => 1,
         ]);
         $this->assertNotNull($valoracion->fresh()->fecha_validacion);
+        $notification = $maintenance->notifications()->firstOrFail();
+        $this->assertSame('valoracion_autorizada', $notification->data['type']);
+        $this->assertSame('/mis-valoraciones', $notification->data['url']);
+        app(ValoracionNotificationService::class)->notifyDecision($valoracion->fresh(), true);
+        $this->assertCount(1, $maintenance->notifications()->get());
+        Event::assertDispatched(UserNotificationCreated::class);
     }
 
     public function test_rejection_requires_trimmed_reason_and_changes_both_states(): void
     {
+        Event::fake([UserNotificationCreated::class]);
         $admin = $this->userWithRole('Subdirector Administrativo');
+        $maintenance = $this->userWithRole('Personal de Mantenimiento');
         $valoracion = $this->valoracion(
-            $this->userWithRole('Personal de Mantenimiento'),
+            $maintenance,
             $this->ticket()
         );
         Sanctum::actingAs($admin);
@@ -141,6 +155,28 @@ class ValoracionAuthorizationTest extends ValoracionTestCase
             ->assertJsonPath('data.motivo_rechazo', 'Ajustar cantidades.')
             ->assertJsonPath('data.ticket.estado.nombre', 'Rechazado')
             ->assertJsonPath('data.veces_revisada', 1);
+
+        $notification = $maintenance->notifications()->firstOrFail();
+        $this->assertSame('valoracion_rechazada', $notification->data['type']);
+        $this->assertSame($valoracion->id, $notification->data['valoracion_id']);
+    }
+
+    public function test_decision_remains_committed_if_reverb_is_unavailable(): void
+    {
+        Event::listen(UserNotificationCreated::class, function (): void {
+            throw new BroadcastException('Reverb no disponible en prueba.');
+        });
+        $admin = $this->userWithRole('Subdirector Administrativo');
+        $maintenance = $this->userWithRole('Personal de Mantenimiento');
+        $valoracion = $this->valoracion($maintenance, $this->ticket());
+        Sanctum::actingAs($admin);
+
+        $this->postJson("/api/valoraciones/{$valoracion->id}/autorizar")
+            ->assertOk();
+
+        $this->assertSame('Autorizada', $valoracion->fresh()->estado_general);
+        $this->assertSame('Autorizado', $valoracion->ticket->fresh()->estado->nombre);
+        $this->assertSame('valoracion_autorizada', $maintenance->notifications()->firstOrFail()->data['type']);
     }
 
     public function test_second_or_mismatched_decision_is_rejected_without_changes(): void

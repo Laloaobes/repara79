@@ -2,16 +2,16 @@
 
 ## Identificación
 
-- **Estado real:** Pendiente de implementación funcional; existe una campana sin contenido y `User` ya utiliza `Notifiable`.
+- **Estado real:** Implementación funcional del MVP disponible con persistencia, REST, Reverb/Echo y eventos del flujo de valoración y reparación.
 - **Prioridad:** Muy alta.
-- **Actores funcionales iniciales:** Subdirector Administrativo y Responsable del Lugar.
+- **Actores funcionales:** Subdirector Administrativo, Responsable del Lugar y Personal de Mantenimiento.
 - **Dependencia principal:** ÉPICA 10 — Bitácora de Mantenimiento / Archivero Digital de Reparaciones Exitosas.
 - **Dependencia de despliegue:** ÉPICA 15 debe operar Reverb, el worker de colas y el proxy WebSocket.
 - **Enfoque:** Persistencia local obligatoria con actualización inmediata complementaria.
 
 ## Objetivo
 
-Notificar dentro de REPARA-79 la finalización exitosa de una reparación, después de confirmar su PDF y registro en el Archivero Digital, para que los destinatarios correspondientes conozcan el cierre y naveguen al resultado sin depender de correo o servicios externos.
+Notificar dentro de REPARA-79 los cambios relevantes del flujo de valoración y la finalización exitosa de una reparación, para que cada destinatario navegue al módulo autorizado sin depender de correo o servicios externos.
 
 ## Resultado esperado
 
@@ -25,6 +25,8 @@ Al terminar la épica, el sistema debe cubrir este flujo:
 6. Reverb la entrega a los usuarios conectados y la campana se actualiza sin recargar.
 7. Si Reverb o el worker no están disponibles, la notificación permanece en PostgreSQL y se recupera mediante REST.
 8. Al seleccionar el aviso, se marca como leído y se navega al detalle autorizado del Archivero.
+9. Personal de Mantenimiento recibe el resultado de autorización o rechazo de su propia valoración.
+10. Los Subdirectores Administrativos activos reciben el aviso de una valoración rechazada que fue corregida y reenviada.
 
 Una falla de transmisión en tiempo real nunca revierte la reparación, el PDF, la bitácora ni la notificación ya persistida.
 
@@ -32,7 +34,7 @@ Una falla de transmisión en tiempo real nunca revierte la reparación, el PDF, 
 
 - Tabla estándar `notifications` de Laravel con `data` en JSONB.
 - Retiro controlado de la tabla heredada `notificaciones`.
-- Notificación inicial `reparacion_finalizada`.
+- Eventos `reparacion_finalizada`, `valoracion_autorizada`, `valoracion_rechazada` y `valoracion_corregida`.
 - Selección automática de destinatarios.
 - Persistencia posterior al commit.
 - Consulta paginada de notificaciones propias.
@@ -50,7 +52,7 @@ Una falla de transmisión en tiempo real nunca revierte la reparación, el PDF, 
 - Pusher como servicio externo, Ably o Firebase.
 - Redacción o envío manual de notificaciones.
 - Preferencias por usuario, silenciamiento, sonidos o horarios.
-- Notificaciones sobre eventos distintos de `reparacion_finalizada`.
+- Notificaciones sobre eventos distintos de los cuatro eventos oficiales del MVP.
 - Página histórica independiente de notificaciones; el panel muestra las más recientes.
 - Eliminación manual de notificaciones.
 - Reintentos administrables desde la interfaz.
@@ -89,6 +91,17 @@ La arquitectura nativa de Laravel permite incorporar otros canales en una versi�
 - La autenticación actual utiliza tokens Sanctum enviados como `Bearer` mediante `frontend/src/api/axios.ts`.
 
 ## Evento inicial del MVP
+
+Además del evento inicial de cierre, la ampliación acordada incorpora:
+
+| Evento                         | Destinatarios                                                                  | Navegación                         |
+| :----------------------------- | :----------------------------------------------------------------------------- | :--------------------------------- |
+| `valoracion_autorizada`        | Personal de Mantenimiento activo que elaboró la valoración.                    | `/mis-valoraciones`                |
+| `valoracion_rechazada`         | Personal de Mantenimiento activo que elaboró la valoración.                    | `/mis-valoraciones`                |
+| `valoracion_corregida`         | Todos los Subdirectores Administrativos activos.                               | `/valoraciones-por-aprobar`        |
+| `reparacion_finalizada`        | Subdirectores activos y Responsable activo asignado al área de la reparación.  | Detalle autorizado del Archivero.  |
+
+Todos se persisten después de la transición válida, usan una clave idempotente por evento y ciclo de revisión, y toleran una falla de broadcast sin revertir el flujo principal.
 
 ### Condición de emisión
 
@@ -190,7 +203,7 @@ No existe endpoint de eliminación.
 ```text
 Commit E08-E10
       ↓
-Evento reparacion_finalizada
+Evento funcional confirmado
       ↓
 Selección de destinatarios
       ↓
@@ -293,7 +306,7 @@ Tech Lead.
 ## Alcance técnico
 
 - Crear `docs/epica-11-contrato-notificaciones.md`.
-- Confirmar `reparacion_finalizada` como único evento del MVP.
+- Confirmar los cuatro eventos oficiales del MVP y sus destinatarios.
 - Definir condición posterior al commit e idempotencia.
 - Definir destinatarios, exclusiones y datos activos.
 - Aprobar el esquema estándar con `data` JSONB.
@@ -330,7 +343,7 @@ No agrega llaves específicas como `ticket_id` o `bitacora_id` a la tabla están
 
 ## Criterios de aceptación
 
-1. El contrato identifica un único evento y su condición posterior al commit.
+1. El contrato identifica los cuatro eventos y su condición posterior a cada transición confirmada.
 2. Los destinatarios y exclusiones utilizan nombres oficiales de roles.
 3. El payload JSON y la URL coinciden con las rutas de ÉPICA 10.
 4. El esquema utiliza `notifications.data` JSONB sin columnas funcionales adicionales.
@@ -343,7 +356,7 @@ No agrega llaves específicas como `ticket_id` o `bitacora_id` a la tabla están
 
 ## Definition of Done
 
-1. **Dado que** ÉPICA 10 confirmó una reparación, **cuando** el equipo consulte el contrato, **entonces** encontrará la condición, destinatarios y payload exactos de `reparacion_finalizada`.
+1. **Dado que** el flujo confirmó una valoración o reparación, **cuando** el equipo consulte el contrato, **entonces** encontrará la condición, destinatarios y payload exactos del evento correspondiente.
 2. **Dado que** las notificaciones deben sobrevivir a una desconexión, **cuando** se revise la arquitectura, **entonces** la persistencia REST será obligatoria y Reverb será complementario.
 3. **Dado que** los canales son privados, **cuando** backend y frontend implementen el contrato, **entonces** la autorización verificará que el canal pertenezca al usuario autenticado.
 4. **Dado que** existe una tabla heredada, **cuando** se prepare la migración, **entonces** no podrá eliminar datos sin auditoría y decisión explícita.
@@ -438,6 +451,7 @@ Consulta:
 4. **Crear notificación persistente** — Generar payload y `event_key`, guardar una fila por destinatario e impedir duplicaciones en reintentos.
 5. **Implementar consulta propia** — Devolver página reciente, fechas, datos, lectura y `unread_count` sin aceptar filtros de usuario.
 6. **Implementar marcado de lectura** — Resolver la notificación desde la relación del usuario y marcar una o todas de manera idempotente.
+7. **Integrar valoraciones** — Avisar al autor tras autorizar o rechazar y a los Subdirectores tras corregir y reenviar.
 
 ## Criterios de aceptación
 
@@ -455,6 +469,8 @@ Consulta:
 12. Marcar una notificación propia o todas actualiza `read_at`.
 13. Una notificación ajena responde `404` y no cambia.
 14. No existe endpoint para enviar o eliminar notificaciones.
+15. Personal de Mantenimiento recibe únicamente las decisiones sobre sus propias valoraciones.
+16. Todos los Subdirectores activos reciben las valoraciones corregidas y reenviadas.
 
 ## Definition of Done
 
@@ -794,11 +810,13 @@ No modifican el esquema productivo. Los datos se aíslan y limpian en el ambient
 ## Definition of Done de la Épica
 
 1. **Dado que** ÉPICA 10 confirma una reparación archivada, **cuando** se emita `reparacion_finalizada` después del commit, **entonces** cada destinatario válido tendrá una notificación persistente única.
-2. **Dado que** un usuario autenticado abre la campana, **cuando** consulte, lea o reciba avisos, **entonces** solo operará sobre sus propias notificaciones y verá el contador correcto.
-3. **Dado que** Reverb y el worker están disponibles, **cuando** se cree una notificación, **entonces** la campana del destinatario conectado se actualizará sin recargar.
-4. **Dado que** el tiempo real no está disponible, **cuando** el usuario recupere mediante REST, **entonces** encontrará el aviso persistido sin afectar el flujo principal.
-5. **Dado que** backend y frontend están integrados, **cuando** QA ejecute seguridad, degradación, regresión, lint y build, **entonces** no habrá defectos críticos o altos abiertos y quedará evidencia reproducible.
+2. **Dado que** un Subdirector autoriza o rechaza una valoración, **cuando** la decisión queda confirmada, **entonces** su autor activo recibirá el resultado y podrá navegar a Mis valoraciones.
+3. **Dado que** Personal de Mantenimiento corrige y reenvía una valoración rechazada, **cuando** la transición queda confirmada, **entonces** todos los Subdirectores activos recibirán el aviso y podrán navegar a Valoraciones por aprobar.
+4. **Dado que** un usuario autenticado abre la campana, **cuando** consulte, lea o reciba avisos, **entonces** solo operará sobre sus propias notificaciones y verá el contador correcto.
+5. **Dado que** Reverb y el worker están disponibles, **cuando** se cree una notificación, **entonces** la campana del destinatario conectado se actualizará sin recargar.
+6. **Dado que** el tiempo real no está disponible, **cuando** el usuario recupere mediante REST, **entonces** encontrará el aviso persistido sin afectar el flujo principal.
+7. **Dado que** backend y frontend están integrados, **cuando** QA ejecute seguridad, degradación, regresión, lint y build, **entonces** no habrá defectos críticos o altos abiertos y quedará evidencia reproducible.
 
 ## Criterio de cierre
 
-ÉPICA 11 se considera terminada cuando HU01 a HU05 cumplen su Definition of Done y una reparación finalizada genera avisos persistentes, privados, consultables y actualizables en tiempo real sin usar servicios externos.
+ÉPICA 11 se considera terminada cuando HU01 a HU05 cumplen su Definition of Done y los cuatro eventos acordados generan avisos persistentes, privados, consultables y actualizables en tiempo real sin usar servicios externos.

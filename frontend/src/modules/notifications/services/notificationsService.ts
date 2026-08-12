@@ -2,6 +2,7 @@ import apiClient from '../../../api/axios';
 
 export interface AppNotification {
   id: string;
+  type?: string | null;
   title: string;
   message: string;
   url?: string | null;

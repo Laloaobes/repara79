@@ -57,7 +57,8 @@ const NotificationMenu = () => {
 
   const read = async (item: AppNotification) => {
     if (!item.read_at) { await notificationsService.read(item.id); await load(); }
-    if (item.url && /^\/archivero-reparaciones(?:\/\d+)?$/.test(item.url)) {
+    const allowedRoutes = /^\/(?:archivero-reparaciones(?:\/\d+)?|mis-valoraciones|valoraciones-por-aprobar)$/;
+    if (item.url && allowedRoutes.test(item.url)) {
       setOpen(false);
       navigate(item.url);
     }

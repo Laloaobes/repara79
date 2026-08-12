@@ -7,13 +7,19 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Valoracion;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ValoracionResubmissionService
 {
+    public function __construct(
+        private readonly ValoracionNotificationService $notifications,
+    ) {}
+
     public function reenviar(Valoracion $routeValoracion, User $author, array $data): Valoracion
     {
-        return DB::transaction(function () use ($routeValoracion, $author, $data) {
+        $updated = DB::transaction(function () use ($routeValoracion, $author, $data) {
             $valoracion = Valoracion::query()
                 ->whereKey($routeValoracion->id)
                 ->lockForUpdate()
@@ -92,6 +98,17 @@ class ValoracionResubmissionService
                 'materialesTicket',
             ]);
         });
+
+        try {
+            $this->notifications->notifyResubmission($updated);
+        } catch (Throwable $notificationError) {
+            Log::error('No fue posible persistir la notificación de la valoración corregida.', [
+                'valoracion_id' => $updated->id,
+                'error' => $notificationError->getMessage(),
+            ]);
+        }
+
+        return $updated;
     }
 
     private function requiredState(string $name): EstadoTicket

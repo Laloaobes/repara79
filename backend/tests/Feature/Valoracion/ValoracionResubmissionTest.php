@@ -2,14 +2,20 @@
 
 namespace Tests\Feature\Valoracion;
 
+use App\Events\UserNotificationCreated;
+use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;
 
 class ValoracionResubmissionTest extends ValoracionTestCase
 {
     public function test_author_can_sync_materials_and_resubmit_rejected_valoracion(): void
     {
+        Event::fake([UserNotificationCreated::class]);
         $author = $this->userWithRole('Personal de Mantenimiento');
         $reviewer = $this->userWithRole('Subdirector Administrativo');
+        $otherAdministrator = $this->userWithRole('Subdirector Administrativo');
+        $inactiveAdministrator = $this->userWithRole('Subdirector Administrativo');
+        $inactiveAdministrator->update(['activo' => false]);
         $valoracion = $this->valoracion(
             $author,
             $this->ticket('Rechazado'),
@@ -69,6 +75,19 @@ class ValoracionResubmissionTest extends ValoracionTestCase
             'solicitud_id' => $valoracion->id,
             'nombre_material' => 'Interruptor nuevo',
         ]);
+        foreach ([$reviewer, $otherAdministrator] as $administrator) {
+            $notification = $administrator->notifications()->firstOrFail();
+            $this->assertSame('valoracion_corregida', $notification->data['type']);
+            $this->assertSame('/valoraciones-por-aprobar', $notification->data['url']);
+            $this->assertSame($valoracion->id, $notification->data['valoracion_id']);
+        }
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $inactiveAdministrator->id,
+        ]);
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $author->id,
+        ]);
+        Event::assertDispatchedTimes(UserNotificationCreated::class, 2);
     }
 
     public function test_another_maintenance_user_receives_not_found_and_cannot_modify(): void
