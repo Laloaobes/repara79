@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Estado de implementación E08–E11 — REPARA-79</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 20mm; }
+    * { box-sizing: border-box; }
+    body {
+      color: #24352d;
+      font-family: "DejaVu Sans", Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.48;
+      margin: 0;
+    }
+    h1, h2, h3 { color: #17452f; page-break-after: avoid; }
+    h1 { font-size: 25pt; line-height: 1.15; margin: 0 0 12px; }
+    h2 {
+      border-bottom: 2px solid #78b795;
+      font-size: 17pt;
+      margin: 26px 0 12px;
+      padding-bottom: 5px;
+    }
+    h3 { font-size: 12.5pt; margin: 18px 0 7px; }
+    p { margin: 7px 0; }
+    ul, ol { margin: 6px 0 10px 21px; padding: 0; }
+    li { margin: 3px 0; }
+    table { border-collapse: collapse; margin: 10px 0 16px; width: 100%; }
+    th, td { border: 1px solid #c9d8d0; padding: 7px 8px; text-align: left; vertical-align: top; }
+    th { background: #eaf4ee; color: #17452f; font-weight: 700; }
+    tr { page-break-inside: avoid; }
+    code { background: #edf2ef; border-radius: 3px; font-family: Consolas, monospace; padding: 1px 3px; }
+    .cover {
+      display: table;
+      height: 245mm;
+      page-break-after: always;
+      width: 100%;
+    }
+    .cover-inner { display: table-cell; vertical-align: middle; }
+    .eyebrow { color: #3d7d5d; font-size: 11pt; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+    .subtitle { color: #52675d; font-size: 15pt; margin: 0 0 34px; }
+    .meta { border-left: 5px solid #52a878; color: #52675d; padding: 5px 0 5px 15px; }
+    .meta p { margin: 4px 0; }
+    .callout {
+      background: #edf7f1;
+      border-left: 5px solid #3c9566;
+      margin: 13px 0;
+      padding: 11px 14px;
+    }
+    .warning { background: #fff7e8; border-left-color: #d39a32; }
+    .status { border-radius: 10px; display: inline-block; font-size: 8.5pt; font-weight: 700; padding: 3px 7px; }
+    .mostly { background: #dff3e7; color: #21613e; }
+    .partial { background: #fff0cb; color: #785613; }
+    .missing { background: #f9dddd; color: #862d2d; }
+    .small { color: #66776f; font-size: 9pt; }
+    .page-break { page-break-before: always; }
+    .verdict td:first-child { font-weight: 700; width: 48%; }
+    .check { color: #246d45; font-weight: 700; }
+    .cross { color: #9a3f35; font-weight: 700; }
+    .footer-note { border-top: 1px solid #c9d8d0; color: #66776f; font-size: 8.5pt; margin-top: 28px; padding-top: 8px; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div class="cover-inner">
+      <p class="eyebrow">REPARA-79 · Informe técnico</p>
+      <h1>Estado de implementación del flujo central básico</h1>
+      <p class="subtitle">Contraste de las épicas E08, E09, E10 y E11 con el proyecto actual</p>
+      <div class="meta">
+        <p><strong>Rama evaluada:</strong> <code>stable</code></p>
+        <p><strong>Integración evaluada:</strong> PR #84 — culminación del flujo principal</p>
+        <p><strong>Fecha de evaluación:</strong> 9 de agosto de 2026</p>
+        <p><strong>Alcance:</strong> backend, frontend, migraciones, rutas y pruebas relacionadas</p>
+      </div>
+    </div>
+  </section>
+
+  <h2>1. Resumen ejecutivo</h2>
+  <div class="callout">
+    <strong>Resultado principal:</strong> el recorrido central es funcional y demostrable. Un ticket autorizado puede ser tomado por Personal de Mantenimiento, finalizarse con evidencias, convertirse en un PDF privado, incorporarse al Archivero y producir notificaciones persistentes.
+  </div>
+  <p>La implementación cumple el objetivo de contar con una versión preliminar estable del MVP, pero no completa todas las historias de usuario ni las Definition of Done refinadas. Las mayores brechas se concentran en la experiencia avanzada del frontend, la cobertura de pruebas, los contratos documentales y las notificaciones en tiempo real con Reverb/Echo.</p>
+
+  <table class="verdict">
+    <tr><td>Flujo central básico demostrable</td><td><span class="check">Sí</span></td></tr>
+    <tr><td>MVP preliminar para pruebas controladas</td><td><span class="check">Sí</span></td></tr>
+    <tr><td>E08–E11 formalmente terminadas</td><td><span class="cross">No</span></td></tr>
+    <tr><td>Bloqueo crítico del recorrido principal</td><td>No identificado</td></tr>
+    <tr><td>Mayor brecha funcional</td><td>E11: Reverb/Echo y navegación de notificaciones</td></tr>
+    <tr><td>Mayor deuda transversal</td><td>Contratos faltantes y matrices de pruebas incompletas</td></tr>
+  </table>
+
+  <h3>Flujo que ya puede ejecutarse</h3>
+  <ol>
+    <li>La autorización de E07 entrega el ticket en estado <code>Autorizado</code>.</li>
+    <li>Personal de Mantenimiento consulta la bandeja y toma el ticket de forma exclusiva.</li>
+    <li>Se registra el estado inicial y el ticket cambia a <code>En reparación</code>.</li>
+    <li>El responsable captura proceso, estado final y evidencias inicial, durante y final.</li>
+    <li>El ticket cambia a <code>Reparado</code>, se genera el PDF privado y se crea la bitácora.</li>
+    <li>Se notifican Subdirectores Administrativos y Responsables activos del área.</li>
+    <li>Los roles autorizados consultan el Archivero y descargan el PDF autenticado.</li>
+  </ol>
+
+  <div class="callout warning">
+    Los encabezados “Estado real” de los documentos refinados E08–E11 todavía describen el estado anterior a la implementación. Deben actualizarse cuando el equipo formalice el avance de cada HU.
+  </div>
+
+  <div class="page-break"></div>
+  <h2>2. E08 — Ejecución de la reparación</h2>
+  <p><strong>Estado:</strong> <span class="status partial">Funcional, cierre formal pendiente</span></p>
+
+  <h3>Implementado</h3>
+  <ul>
+    <li>Bandeja de tickets autorizados disponibles y reparaciones propias en curso.</li>
+    <li>Acción “Tomar reparación” con captura y confirmación del estado inicial.</li>
+    <li>Exclusividad por ticket mediante bloqueo transaccional y unicidad en base de datos.</li>
+    <li>Registro de <code>fecha_inicio</code> y transición a <code>En reparación</code>.</li>
+    <li>Finalización exclusiva por el usuario responsable.</li>
+    <li>Proceso, estado final y tres evidencias obligatorias: <code>inicial</code>, <code>durante</code> y <code>final</code>.</li>
+    <li>JPG, PNG y WebP, con máximo de 5 MB por archivo y validación del soporte WebP.</li>
+    <li>Transición a <code>Reparado</code> y registro de <code>fecha_reparacion</code>.</li>
+    <li>Rollback de base de datos y eliminación de archivos ante fallos previos al commit.</li>
+    <li>Corrección del ordenamiento por <code>fecha_inicio</code> y del flujo del botón “Tomar reparación”.</li>
+  </ul>
+
+  <h3>Pendiente</h3>
+  <ul>
+    <li>Crear <code>docs/epica-08-contrato-reparaciones.md</code>.</li>
+    <li>Precargar el estado inicial con la descripción del ticket; actualmente comienza vacío.</li>
+    <li>Agregar búsqueda por folio o título.</li>
+    <li>Validar archivos antes del envío y mostrar vistas previas.</li>
+    <li>Diferenciar errores 403, 404 y 422 y mejorar la recuperación del formulario.</li>
+    <li>Probar archivos mayores de 5 MB y el mantenimiento del estado <code>Autorizada</code> en la solicitud de materiales.</li>
+    <li>Añadir pruebas de concurrencia simultánea y pruebas automatizadas del frontend.</li>
+  </ul>
+
+  <table>
+    <tr><th>Historia</th><th>Estado evaluado</th></tr>
+    <tr><td>HU01 — Definir contrato</td><td><span class="status partial">Parcial</span> Reglas implícitas en código; documento ausente.</td></tr>
+    <tr><td>HU02 — Implementar API</td><td><span class="status mostly">Mayormente implementada</span></td></tr>
+    <tr><td>HU03 — Ejecutar desde interfaz</td><td><span class="status partial">Parcial</span> Falta búsqueda, precarga y UX de archivos.</td></tr>
+    <tr><td>HU04 — Validar ejecución</td><td><span class="status partial">Parcial</span> Cobertura inferior a la matriz refinada.</td></tr>
+  </table>
+
+  <h2>3. E09 — Informe final PDF</h2>
+  <p><strong>Estado:</strong> <span class="status partial">PDF funcional y protegido; contenido y UX incompletos</span></p>
+
+  <h3>Implementado</h3>
+  <ul>
+    <li>Generación automática mediante DomPDF durante la finalización.</li>
+    <li>Ruta privada <code>reportes/ticket-{id}/reporte-reparacion-ticket-{id}.pdf</code>.</li>
+    <li>Información general, valoración, materiales, reparación y tres evidencias incrustadas.</li>
+    <li>Recursos remotos, PHP y JavaScript deshabilitados durante el renderizado.</li>
+    <li>Verificación de documento PDF no vacío y limpieza ante fallos.</li>
+    <li>Endpoint autenticado con caché privada, <code>no-store</code> y <code>nosniff</code>.</li>
+    <li>Autorización por rol y alcance; Usuario Registrado no puede descargar.</li>
+  </ul>
+
+  <h3>Pendiente</h3>
+  <ul>
+    <li>Crear <code>docs/epica-09-contrato-informe-pdf.md</code>.</li>
+    <li>Agregar logotipo aprobado, identificador <code>REPARA79-T{id}</code> y branding definitivo.</li>
+    <li>Incluir responsable y fecha de valoración, código de material y fechas de ejecución.</li>
+    <li>Formatear explícitamente la moneda MXN y agregar pie con identificador y páginas.</li>
+    <li>Ofrecer descarga inmediata después del cierre y desde el detalle del ticket.</li>
+    <li>Mostrar progreso, impedir doble envío y distinguir errores 403, 404 y 409.</li>
+    <li>Probar contenido, acentos, materiales múltiples, totales, permisos y fallos de escritura.</li>
+  </ul>
+
+  <table>
+    <tr><th>Historia</th><th>Estado evaluado</th></tr>
+    <tr><td>HU01 — Definir contrato</td><td><span class="status partial">Parcial</span> Documento ausente.</td></tr>
+    <tr><td>HU02 — Generar y proteger</td><td><span class="status mostly">Mayormente implementada</span></td></tr>
+    <tr><td>HU03 — Consultar y descargar</td><td><span class="status partial">Parcial</span> Descarga disponible solo desde el Archivero.</td></tr>
+    <tr><td>HU04 — Validar informe</td><td><span class="status partial">Parcial</span> Faltan pruebas documentales y de fallo.</td></tr>
+  </table>
+
+  <div class="page-break"></div>
+  <h2>4. E10 — Bitácora y Archivero Digital</h2>
+  <p><strong>Estado:</strong> <span class="status partial">Backend sólido para MVP; frontend y validación incompletos</span></p>
+
+  <h3>Implementado</h3>
+  <ul>
+    <li>Creación automática de una bitácora después de confirmar el PDF.</li>
+    <li>Campos obligatorios, título de 255 caracteres y unicidad por ticket y reparación.</li>
+    <li>Auditoría preventiva de registros heredados incompatibles.</li>
+    <li>Listado paginado, ordenado por fecha y búsqueda ejecutada en servidor.</li>
+    <li>Detalle protegido y ausencia de rutas mutables.</li>
+    <li>Alcance por rol: todo para Subdirector, propias para Mantenimiento y áreas activas para Responsable del Lugar.</li>
+    <li>Ruta física oculta y descarga mediante endpoint protegido.</li>
+    <li>Página de Archivero con búsqueda, memoria técnica, evidencias y descarga.</li>
+  </ul>
+
+  <h3>Pendiente</h3>
+  <ul>
+    <li>Crear <code>docs/epica-10-contrato-archivero.md</code>.</li>
+    <li>Consumir la metadata de paginación y agregar navegación entre páginas.</li>
+    <li>Implementar una ruta o vista dedicada de detalle.</li>
+    <li>Mostrar responsable y fecha de generación en cada resultado.</li>
+    <li>Conservar búsqueda y página al volver del detalle.</li>
+    <li>Distinguir “sin registros” de “sin coincidencias” y manejar errores por tipo.</li>
+    <li>Endurecer o verificar las reglas de eliminación de relaciones históricas.</li>
+    <li>Completar pruebas de paginación, búsqueda, áreas, fallos, reintentos y concurrencia.</li>
+  </ul>
+
+  <table>
+    <tr><th>Historia</th><th>Estado evaluado</th></tr>
+    <tr><td>HU01 — Definir contrato</td><td><span class="status partial">Parcial</span> Documento ausente.</td></tr>
+    <tr><td>HU02 — Archivado y API</td><td><span class="status mostly">Mayormente implementada</span></td></tr>
+    <tr><td>HU03 — Consultar Archivero</td><td><span class="status partial">Parcial</span> Sin paginación ni detalle dedicado en frontend.</td></tr>
+    <tr><td>HU04 — Validar Archivero</td><td><span class="status partial">Parcial</span> Cobertura insuficiente.</td></tr>
+  </table>
+
+  <h2>5. E11 — Notificaciones internas</h2>
+  <p><strong>Estado:</strong> <span class="status partial">Persistencia REST funcional; tiempo real pendiente</span></p>
+
+  <h3>Implementado</h3>
+  <ul>
+    <li>Tabla estándar <code>notifications</code> con UUID y JSONB en PostgreSQL.</li>
+    <li>Persistencia posterior al commit del cierre.</li>
+    <li>Destinatarios activos: Subdirectores y Responsables del Lugar asociados al área.</li>
+    <li>Exclusión del técnico originador y de Usuario Registrado.</li>
+    <li>UUID determinista e inserción idempotente para impedir duplicados.</li>
+    <li>Listado paginado, conteo de no leídas, lectura individual y lectura global.</li>
+    <li>Protección de filas ajenas mediante respuesta 404.</li>
+    <li>Campana REST con contador y distinción visual de no leídas.</li>
+  </ul>
+
+  <h3>Pendiente</h3>
+  <ul>
+    <li>Crear <code>docs/epica-11-contrato-notificaciones.md</code> y alinear el payload.</li>
+    <li>Instalar y configurar Laravel Reverb, Laravel Echo y <code>pusher-js</code>.</li>
+    <li>Implementar canal privado, autorización Sanctum, evento, listener y cola.</li>
+    <li>Transmitir en tiempo real, reconectar y deduplicar REST/WebSocket.</li>
+    <li>Navegar al detalle del Archivero al seleccionar una notificación.</li>
+    <li>Mostrar fecha, validar URL interna y limpiar el estado al cerrar sesión.</li>
+    <li>Auditar y retirar de manera segura la tabla heredada <code>notificaciones</code>.</li>
+    <li>Completar pruebas de destinatarios, filas ajenas, canales, caída y reconexión.</li>
+  </ul>
+
+  <table>
+    <tr><th>Historia</th><th>Estado evaluado</th></tr>
+    <tr><td>HU01 — Definir contrato</td><td><span class="status partial">Parcial</span> Documento ausente y payload divergente.</td></tr>
+    <tr><td>HU02 — Persistir y consultar</td><td><span class="status mostly">Mayormente implementada</span></td></tr>
+    <tr><td>HU03 — Transmitir con Reverb</td><td><span class="status missing">No implementada</span></td></tr>
+    <tr><td>HU04 — Operar campana</td><td><span class="status partial">Parcial</span> REST sin navegación ni tiempo real.</td></tr>
+    <tr><td>HU05 — Validar notificaciones</td><td><span class="status partial">Parcial</span></td></tr>
+  </table>
+
+  <div class="page-break"></div>
+  <h2>6. Verificación técnica realizada</h2>
+  <table>
+    <tr><th>Verificación</th><th>Resultado</th></tr>
+    <tr><td><code>RepairFlowTest</code></td><td><span class="check">3 pruebas correctas, 52 aserciones</span></td></tr>
+    <tr><td>Chequeo TypeScript <code>tsc --noEmit</code></td><td><span class="check">Correcto</span></td></tr>
+    <tr><td>Compilación de producción con Vite</td><td><span class="check">Correcta</span></td></tr>
+  </table>
+  <p class="small">Estas verificaciones confirman el recorrido mínimo cubierto por las pruebas actuales. No sustituyen las matrices completas exigidas por las HU04 de cada épica.</p>
+
+  <h2>7. Orden recomendado para completar las épicas</h2>
+  <ol>
+    <li><strong>E08:</strong> precarga, búsqueda, validación visual de archivos y matriz de pruebas.</li>
+    <li><strong>E09:</strong> contenido institucional del PDF, descarga reutilizable y pruebas documentales.</li>
+    <li><strong>E10:</strong> paginación, detalle, estados de error y pruebas de permisos/consistencia.</li>
+    <li><strong>E11:</strong> Reverb/Echo, navegación, payload definitivo y validación integral.</li>
+    <li><strong>Documentación:</strong> crear los cuatro contratos y actualizar el estado real de las épicas.</li>
+  </ol>
+
+  <div class="callout">
+    <strong>Conclusión:</strong> no es necesario rehacer el flujo central. La base implementada es adecuada para continuar; el trabajo restante consiste principalmente en completar contratos, experiencia de usuario, tiempo real y cobertura de calidad hasta satisfacer formalmente las Definition of Done.
+  </div>
+
+  <p class="footer-note">Informe generado a partir del estado local de REPARA-79 en la rama <code>stable</code>. No se modificó código funcional durante la evaluación.</p>
+</body>
+</html>
